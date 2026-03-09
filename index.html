@@ -616,6 +616,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 </header>
 
 <!-- ============ SIDEBAR ============ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <nav class="sidebar">
     <div class="nav-section">Principal</div>
     <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div>
@@ -1329,6 +1330,18 @@ function saveSBConfig(url, key) {
 }
 function clearSBConfig() {
     localStorage.removeItem('sfi_supabase_config');
+}
+
+function toggleSidebar(){
+    var sb=document.querySelector('.sidebar');
+    var ov=document.getElementById('sidebarOverlay');
+    if(sb.classList.contains('open')){
+        sb.classList.remove('open');
+        if(ov) ov.classList.remove('active');
+    } else {
+        sb.classList.add('open');
+        if(ov) ov.classList.add('active');
+    }
 }
 
 let DB = {
@@ -5505,5 +5518,19 @@ function init() {
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
+
+<script>
+// Auto-close sidebar on mobile nav click
+document.querySelectorAll('.sidebar .nav-item').forEach(function(el){
+    el.addEventListener('click', function(){
+        if(window.innerWidth<=768){
+            var sb=document.querySelector('.sidebar');
+            var ov=document.getElementById('sidebarOverlay');
+            sb.classList.remove('open');
+            if(ov) ov.classList.remove('active');
+        }
+    });
+});
+</script>
 </body>
 </html>
