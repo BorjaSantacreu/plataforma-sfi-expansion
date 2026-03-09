@@ -225,13 +225,84 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f2f
 .filter-select{padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;cursor:pointer;}
 
 /* ============ RESPONSIVE ============ */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:85;opacity:0;transition:opacity .3s;}
+.sidebar-overlay.active{display:block;opacity:1;}
+
 @media(max-width:768px){
-    .sidebar{transform:translateX(-100%);}
+    /* Header */
+    .app-header{padding:0 10px;gap:8px;}
+    .app-header h1{font-size:15px;}
+    .app-header .subtitle{display:none;}
+    .hamburger-btn{display:block !important;}
+    .header-right{gap:8px;}
+    .header-right .header-btn span{display:none;}
+    .header-right .header-btn{padding:6px 8px;font-size:14px;}
+    .search-input{width:120px !important;font-size:12px !important;padding:6px 8px 6px 28px !important;}
+
+    /* Sidebar */
+    .sidebar{transform:translateX(-100%);z-index:95;box-shadow:4px 0 20px rgba(0,0,0,.15);}
     .sidebar.open{transform:translateX(0);}
-    .main-content{margin-left:0;}
-    .form-grid{grid-template-columns:1fr;}
-    .kanban-board{flex-direction:column;}
-    .kanban-column{max-width:none;}
+    .main-content{margin-left:0;padding:12px;}
+
+    /* KPI cards */
+    .kpi-grid{grid-template-columns:repeat(2,1fr) !important;gap:8px;}
+    .kpi-card{padding:12px;}
+    .kpi-card .kpi-value{font-size:20px;}
+    .kpi-card .kpi-icon{width:32px;height:32px;font-size:14px;margin-bottom:6px;}
+    .kpi-card .kpi-label{font-size:9px;}
+
+    /* Charts - stack vertically */
+    .dashboard-row,.chart-row,[style*="display:flex"][style*="gap"]{flex-direction:column !important;}
+    .dashboard-row > div,.chart-row > div{width:100% !important;min-width:0 !important;}
+
+    /* Cards */
+    .card{margin-bottom:12px;}
+    .card-header{padding:12px 14px;}
+    .card-header h2{font-size:14px;}
+    .card-body{padding:12px 14px;}
+
+    /* Forms */
+    .form-grid{grid-template-columns:1fr !important;}
+    .form-group input,.form-group select,.form-group textarea{font-size:14px !important;}
+
+    /* Pipeline / Kanban */
+    .kanban-board{flex-direction:column !important;}
+    .kanban-column{max-width:none !important;width:100% !important;}
+
+    /* Tables */
+    .table-container,table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;}
+    table{min-width:600px;}
+    th,td{padding:8px 10px !important;font-size:12px !important;white-space:nowrap;}
+
+    /* Modal */
+    .modal-box{width:95% !important;max-width:none !important;margin:10px;padding:16px !important;max-height:85vh;overflow-y:auto;}
+    .modal-box h2{font-size:16px !important;}
+
+    /* Detail tabs */
+    .tab-nav{flex-wrap:wrap;gap:4px;}
+    .tab-nav button{font-size:11px;padding:6px 10px;}
+
+    /* Scoring grid */
+    .grid-3{grid-template-columns:1fr !important;}
+
+    /* Buttons */
+    .btn,.btn-gold,.btn-primary{font-size:12px !important;padding:8px 12px !important;}
+
+    /* Page title */
+    h1[style*="font-size"]{font-size:18px !important;}
+
+    /* Detalle suelo header */
+    [style*="display:flex"][style*="justify-content:space-between"]{flex-direction:column;gap:8px;}
+
+    /* Search bar in header */
+    .search-container{display:none;}
+}
+
+@media(max-width:400px){
+    .kpi-grid{grid-template-columns:1fr !important;}
+    .kpi-card .kpi-value{font-size:22px;}
+    .app-header h1{font-size:13px;}
+    .header-right{gap:4px;}
 }
 
 
@@ -518,7 +589,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         </div>
     </div>
     <span class="subtitle" style="border-left:1px solid rgba(255,255,255,.3);padding-left:12px;">Plataforma de Expansión</span>
-    <div class="header-right">
+    <button class="hamburger-btn" onclick="toggleSidebar()" style="display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;margin-right:8px;"><i class="fas fa-bars"></i></button><div class="header-right">
         <div class="global-search-wrapper">
             <i class="fas fa-search global-search-icon"></i>
             <input type="text" class="global-search-input" id="globalSearch" placeholder="Buscar suelos, contactos..." oninput="globalSearchHandler()" onfocus="globalSearchHandler()" autocomplete="off">
