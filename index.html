@@ -809,7 +809,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <select class="filter-select" id="pipeVerticalFilter" onchange="renderPipelineTable()">
                 <option value="">Todas las verticales</option>
                 <option value="Living">Living</option>
-                <option value="Hospitality">Hospitality</option>
+                <option value="Investment">Investment</option>
                 <option value="Inversión Patrimonial">Inversión Patrimonial</option>
             </select>
             <select class="filter-select" id="pipeScoreFilter" onchange="renderPipelineTable()">
@@ -1180,8 +1180,9 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
                 <div class="form-group"><label>Nº viviendas estimadas <span class="hint">(auto si vacío)</span></label><input type="number" id="ns_viviendas" placeholder="Auto: m²t / ratio tipología"></div>
                 <div class="form-group"><label>Tipología</label><select id="ns_tipologia">
                     <option value="">Seleccionar...</option>
-                    <option>Plurifamiliar</option><option>Unifamiliar</option><option>Mixto residencial</option>
-                    <option>Senior Living</option><option>Build to Rent</option><option>Coliving</option>
+                    <option>VPP Plurifamiliar</option><option>VPP Unifamiliar</option><option>Libre Plurifamiliar</option>
+                    <option>Libre Unifamiliar</option><option>Terciario - Hotel</option><option>Terciario - Otro</option>
+                    <option>Mixto Plurifamiliar</option><option>Mixto Unifamiliar</option><option>Hotel-Uni.-Pluri.</option>
                 </select></div>
                 <div class="form-group"><label>Clasificación del suelo</label><select id="ns_clasificacion">
                     <option value="">Seleccionar...</option>
@@ -1358,7 +1359,21 @@ let DB = {
             { id: 'ratio', nombre: 'Ratio Suelo/Ventas', peso: 15, descripcion: '<15% = máx' },
             { id: 'inversion', nombre: 'Inversión Total', peso: 10, descripcion: 'Rango óptimo 5-20M€' },
             { id: 'riesgo', nombre: 'Riesgo Urbanístico', peso: 10, descripcion: 'Bajo = máx' },
-        ]
+        ],
+        porNegocio: {
+            'Cooperativa': {
+                ciudad: 20, viviendas: 20, tipologia: 10, rentabilidad: 15, ratio: 15, inversion: 10, riesgo: 10
+            },
+            'Venta libre': {
+                ciudad: 20, viviendas: 10, tipologia: 10, rentabilidad: 25, ratio: 15, inversion: 10, riesgo: 10
+            },
+            'Hotel': {
+                ciudad: 25, viviendas: 0, tipologia: 15, rentabilidad: 25, ratio: 10, inversion: 15, riesgo: 10
+            },
+            'Otros': {
+                ciudad: 20, viviendas: 10, tipologia: 10, rentabilidad: 20, ratio: 15, inversion: 15, riesgo: 10
+            }
+        }
     }
 };
 
@@ -1366,13 +1381,10 @@ const PIPELINE_ESTADOS = [
     { id: 'Captada', color: '#94a3b8', orden: 1 },
     { id: 'Fase 0 - Análisis Preliminar', color: '#3b82f6', orden: 2 },
     { id: 'Fase 1 - Análisis Técnico', color: '#6366f1', orden: 3 },
-    { id: 'Comité de Suelo', color: '#8b5cf6', orden: 4 },
-    { id: 'Comité de Inversión', color: '#a855f7', orden: 5 },
-    { id: 'Negociación', color: '#ec4899', orden: 6 },
-    { id: 'Compra', color: '#10b981', orden: 7 },
-    { id: 'Seguimiento', color: '#0ea5e9', orden: 8 },
-    { id: 'Vendida', color: '#059669', orden: 9 },
-    { id: 'Descartada', color: '#ef4444', orden: 10 },
+    { id: 'Ganada', color: '#10b981', orden: 4 },
+    { id: 'Seguimiento', color: '#0ea5e9', orden: 5 },
+    { id: 'Vendida', color: '#059669', orden: 6 },
+    { id: 'Descartada', color: '#ef4444', orden: 7 },
 ];
 
 function loadDB() {
@@ -1565,7 +1577,7 @@ function migrateLocalToSupabase() {
     function addLog(msg) { if (log) log.innerHTML += msg + '\n'; }
 
     // Column whitelist per table
-    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','created_at'];
+    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','sharepoint_url','created_at'];
     var CONTACTO_COLS = ['id','nombre','empresa','tipo','telefono','email','notas','created_at'];
     var ACTIVIDAD_COLS = ['id','suelo_id','tipo','descripcion','fecha','proximos_pasos','created_at'];
 
@@ -1852,8 +1864,10 @@ function navigateTo(page) {
 // ============================================================
 function calculateScore(suelo) {
     const c = DB.scoring.criterios;
+    const negocio = suelo.negocio || 'Cooperativa';
+    const pesosNeg = DB.scoring.porNegocio && DB.scoring.porNegocio[negocio] ? DB.scoring.porNegocio[negocio] : null;
     const weights = {};
-    c.forEach(cr => weights[cr.id] = cr.peso / 100);
+    c.forEach(cr => weights[cr.id] = (pesosNeg ? (pesosNeg[cr.id] !== undefined ? pesosNeg[cr.id] : cr.peso) : cr.peso) / 100);
 
     let scores = {};
 
@@ -1873,7 +1887,7 @@ function calculateScore(suelo) {
     else scores.viviendas = 25;
 
     // Tipología
-    const tipoMap = {'plurifamiliar':100,'mixto residencial':80,'build to rent':75,'coliving':70,'senior living':60,'unifamiliar':40};
+    const tipoMap = {'vpp plurifamiliar':100,'vpp unifamiliar':80,'libre plurifamiliar':90,'libre unifamiliar':70,'mixto plurifamiliar':85,'mixto unifamiliar':65,'terciario - hotel':75,'terciario - otro':60,'hotel-uni.-pluri.':80};
     scores.tipologia = tipoMap[(suelo.tipologia || '').toLowerCase()] || 50;
 
     // Rentabilidad
@@ -1936,7 +1950,7 @@ function generateAlerts() {
         // Estancamiento
         const limites = {'Captada':7,'Fase 0 - Análisis Preliminar':15,'Fase 1 - Análisis Técnico':20,'Comité de Suelo':10,'Comité de Inversión':10,'Negociación':30};
         const limite = limites[estado] || 30;
-        if (dias > limite && estado !== 'Compra' && estado !== 'Descartada') {
+        if (dias > limite && estado !== 'Ganada' && estado !== 'Descartada') {
             DB.alertas.push({ id: genId(), suelo_id: s.id, tipo: 'urgente', titulo: `${s.nombre} estancada`, desc: `Lleva ${dias} días en "${estado}" (límite: ${limite} días)`, fecha: new Date().toISOString(), leida: false });
         }
 
@@ -1947,7 +1961,7 @@ function generateAlerts() {
 
         // Sin actividad reciente
         const ultimaAct = DB.actividades.filter(a => a.suelo_id === s.id).sort((a,b) => new Date(b.fecha) - new Date(a.fecha))[0];
-        if (!ultimaAct && dias > 14 && estado !== 'Descartada' && estado !== 'Compra') {
+        if (!ultimaAct && dias > 14 && estado !== 'Descartada' && estado !== 'Ganada') {
             DB.alertas.push({ id: genId(), suelo_id: s.id, tipo: 'enfriando', titulo: `Sin actividad: ${s.nombre}`, desc: `No tiene ninguna actividad registrada`, fecha: new Date().toISOString(), leida: false });
         }
     });
@@ -2269,7 +2283,7 @@ function calcHHNN(suelo) {
     const volVentas = pvM2 * edif;
     const vertical = (suelo.vertical || 'Living').toLowerCase();
     let pctHHNN = 0.05; // 5% default for cooperativas
-    if (vertical.includes('hospitality')) pctHHNN = 0.06;
+    if (vertical.includes('investment')) pctHHNN = 0.06;
     if (vertical.includes('inversión') || vertical.includes('inversion')) pctHHNN = 0.04;
     return Math.round(volVentas * pctHHNN);
 }
@@ -2285,14 +2299,15 @@ function populateExcelFilterDropdown(field) {
             else if (sc >= 50) val = 'Media (50-69)';
             else val = 'Baja (<50)';
         } else {
-            val = s[field] || '(vacío)';
+            var realField = field === 'estado' ? 'pipeline_estado' : field;
+            val = s[realField] || '(vacío)';
         }
         counts[val] = (counts[val] || 0) + 1;
     });
     const dd = document.getElementById('efd-' + field);
     if (!dd) return;
     const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-    let html = '<div class="efd-header"><span>' + field.charAt(0).toUpperCase() + field.slice(1) + '</span><button class="efd-clear" onclick="clearExcelFilter(\'' + field + '\')">Limpiar</button></div>';
+    let html = '<div class="efd-header"><span>' + field.charAt(0).toUpperCase() + field.slice(1) + '</span><div style="display:flex;gap:4px;"><button class="efd-clear" onclick="selectAllExcelFilter(\'' + field + '\')">Todos</button><button class="efd-clear" onclick="selectNoneExcelFilter(\'' + field + '\')">Ninguno</button><button class="efd-clear" onclick="clearExcelFilter(\'' + field + '\')">Reset</button></div></div>';
     sorted.forEach(([val, cnt]) => {
         const checked = excelFilters[field].length === 0 || excelFilters[field].includes(val);
         html += '<label><input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="updateExcelFilter(\'' + field + '\',\'' + val.replace(/'/g, "\\'") + '\',this.checked)"> ' + val + ' <span class="efd-count">(' + cnt + ')</span></label>';
@@ -2343,6 +2358,22 @@ function clearExcelFilter(field) {
     const dd = document.getElementById('efd-' + field);
     if (dd) { dd.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true); }
     renderSuelosTable();
+}
+
+function selectAllExcelFilter(field) {
+    excelFilters[field] = [];
+    var btn = document.querySelector('#ef-' + field + ' .excel-filter-btn');
+    if (btn) btn.className = 'excel-filter-btn';
+    populateExcelFilterDropdown(field);
+    renderSuelos();
+}
+
+function selectNoneExcelFilter(field) {
+    excelFilters[field] = ['__NONE__'];
+    var btn = document.querySelector('#ef-' + field + ' .excel-filter-btn');
+    if (btn) btn.className = 'excel-filter-btn active-filter';
+    populateExcelFilterDropdown(field);
+    renderSuelos();
 }
 
 function clearAllExcelFilters() {
@@ -2501,7 +2532,7 @@ function showDetalle(id) {
         <div class="dossier-kpis">
             <div class="dossier-kpi"><div class="dk-value">${s.num_viviendas || '-'}</div><div class="dk-label">Viviendas</div></div>
             <div class="dossier-kpi"><div class="dk-value">${s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') : '-'}</div><div class="dk-label">m²t Edificables</div></div>
-            <div class="dossier-kpi"><div class="dk-value">${fmtMoney(s.inversion_estimada)}</div><div class="dk-label">Inversión</div></div>
+            <div class="dossier-kpi"><div class="dk-value">${fmtMoney(s.precio_suelo)}</div><div class="dk-label">Precio Suelo</div></div>
             <div class="dossier-kpi"><div class="dk-value">${s.precio_m2t ? '€' + s.precio_m2t.toLocaleString('es-ES') : '-'}</div><div class="dk-label">€/m²t</div></div>
         </div>
 
@@ -2526,7 +2557,9 @@ function showDetalle(id) {
                 <div><strong class="text-light" style="font-size:11px;">RESPONSABLE</strong><p>${s.responsable || '-'}</p></div>
                 <div><strong class="text-light" style="font-size:11px;">FECHA CAPTACIÓN</strong><p>${fmtDate(s.fecha_captacion)}</p></div>
                 <div><strong class="text-light" style="font-size:11px;">NEGOCIO</strong><p>${s.negocio || '-'}</p></div>
+                <div><strong class="text-light" style="font-size:11px;">CARPETA SHAREPOINT</strong><p>${s.sharepoint_url ? '<a href="' + s.sharepoint_url + '" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fas fa-folder-open"></i> Abrir documentación</a>' : '<span style="color:var(--text-light);">Sin enlace</span>'}</p></div>
             </div>
+            ${s.latitud && s.longitud ? '<div class="mt-16"><strong class="text-light" style="font-size:11px;">UBICACIÓN</strong><div style="display:flex;gap:8px;margin-top:6px;margin-bottom:8px;"><a href="https://www.google.com/maps?q=' + s.latitud + ',' + s.longitud + '" target="_blank" class="btn btn-outline btn-sm" style="font-size:11px;"><i class="fas fa-map-marked-alt"></i> Ver en Google Maps</a></div><div id="detalleMapContainer" style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border);"></div></div>' : ''}
             ${s.observaciones ? '<div class="mt-16"><strong class="text-light" style="font-size:11px;">OBSERVACIONES</strong><p style="margin-top:4px;background:#f8fafc;padding:12px;border-radius:6px;font-size:13px;line-height:1.5;">' + s.observaciones + '</p></div>' : ''}
             <div class="mt-16 flex gap-8 flex-wrap">
                 <button class="btn btn-gold btn-sm" onclick="cambiarEstadoWorkflow('${s.id}')"><i class="fas fa-arrow-right"></i> Avanzar Pipeline</button>
@@ -2620,6 +2653,18 @@ function showDetalle(id) {
         </div>
     `;
     openModal('modalDetalle');
+    // Init mini-map in detalle
+    setTimeout(function(){
+        var mapC = document.getElementById('detalleMapContainer');
+        if (mapC && s.latitud && s.longitud) {
+            if (window._detalleMap) { window._detalleMap.remove(); window._detalleMap = null; }
+            var dm = L.map(mapC, {zoomControl:true, scrollWheelZoom:false}).setView([s.latitud, s.longitud], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'OSM'}).addTo(dm);
+            L.marker([s.latitud, s.longitud]).addTo(dm).bindPopup('<b>'+s.nombre+'</b><br>'+s.ciudad);
+            window._detalleMap = dm;
+            setTimeout(function(){ dm.invalidateSize(); }, 200);
+        }
+    }, 150);
 }
 
 function switchDetalleTab(btn, panelId) {
@@ -2732,7 +2777,7 @@ function renderKanban() {
                 return `<div class="kanban-card" onclick="showDetalle('${s.id}')">
                     <div class="card-title">${s.nombre}</div>
                     <div class="card-meta">${s.ciudad} · ${s.num_viviendas || '?'} viv · <span class="score-dot ${sc.class}"></span>${s.score_total}</div>
-                    ${s.inversion_estimada ? '<div class="card-meta">' + fmtMoney(s.inversion_estimada) + '</div>' : ''}
+                    ${s.precio_suelo ? '<div class="card-meta">' + fmtMoney(s.precio_suelo) + '</div>' : ''}
                 </div>`;
             }).join('')}</div>
         </div>`;
@@ -2944,7 +2989,7 @@ function markAllAlertsRead() {
 // ============================================================
 function renderDashboard() {
     const total = DB.suelos.length;
-    const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Compra').length;
+    const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
     const invTotal = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').reduce((sum, s) => sum + (s.inversion_estimada || 0), 0);
     const scoreAvg = total ? Math.round(DB.suelos.reduce((sum, s) => sum + s.score_total, 0) / total) : 0;
     const alertasCount = DB.alertas.filter(a => !a.leida).length;
@@ -2975,7 +3020,7 @@ function renderDashboard() {
 
     // Estancadas
     const estancadas = DB.suelos.filter(s => {
-        if (s.pipeline_estado === 'Descartada' || s.pipeline_estado === 'Compra') return false;
+        if (s.pipeline_estado === 'Descartada' || s.pipeline_estado === 'Ganada') return false;
         return daysSince(s.fecha_ultimo_cambio || s.fecha_captacion) > 30;
     }).sort((a,b) => daysSince(b.fecha_ultimo_cambio || b.fecha_captacion) - daysSince(a.fecha_ultimo_cambio || a.fecha_captacion)).slice(0, 10);
     document.getElementById('dashEstancadas').innerHTML = estancadas.length ?
@@ -3200,7 +3245,7 @@ function generarInformeDirectivo() {
     const activas = DB.suelos.filter(s => !['Descartada'].includes(s.pipeline_estado));
     const invTotal = activas.reduce((s, o) => s + (o.inversion_estimada || 0), 0);
     const vivTotal = activas.reduce((s, o) => s + (o.num_viviendas || 0), 0);
-    const compras = DB.suelos.filter(s => s.pipeline_estado === 'Compra');
+    const compras = DB.suelos.filter(s => s.pipeline_estado === 'Ganada');
     const top = [...activas].sort((a,b) => b.score_total - a.score_total).slice(0, 10);
     const byProv = {};
     activas.forEach(s => { const p = s.provincia || 'Sin provincia'; byProv[p] = (byProv[p]||0) + 1; });
@@ -3294,12 +3339,13 @@ function exportSuelosExcel() {
             'Pendiente de': pa.text, 'Últ. Actividad': la.text, 'Responsable': s.responsable || '',
             'Riesgo Urbanístico': s.riesgo_urbanistico || '', 'Clasificación': s.clasificacion_suelo || '',
             'Uso Suelo': s.uso_suelo || '', 'Fecha Captación': s.fecha_captacion?.substring(0,10) || '',
-            'Días en Pipeline': daysSince(s.fecha_captacion), 'Observaciones': s.observaciones || ''
+            'Días en Pipeline': daysSince(s.fecha_captacion), 'Observaciones': s.observaciones || '',
+            'SharePoint': s.sharepoint_url || ''
         };
     });
     const ws = XLSX.utils.json_to_sheet(data);
     // Auto-width columns
-    const colWidths = Object.keys(data[0] || {}).map(k => ({wch: Math.max(k.length, 12)}));
+    const colWidths = data.length > 0 ? Object.keys(data[0]).map(k => ({wch: Math.max(k.length, 14)})) : [];
     ws['!cols'] = colWidths;
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Suelos');
@@ -3837,7 +3883,7 @@ const DEFAULT_PLANTILLA = [
     { id: 'superficie_edificable', label: 'Superficie edificable (m²t)', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'suelo' },
     { id: 'alturas', label: 'Alturas', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'suelo' },
     { id: 'num_viviendas', label: 'Nº viviendas estimadas', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'suelo' },
-    { id: 'tipologia', label: 'Tipología', visible: true, obligatorio: false, defecto: 'Plurifamiliar', tipo: 'select', grupo: 'suelo', opciones: ['Plurifamiliar','Unifamiliar','Mixto residencial','Senior Living','Build to Rent','Coliving'] },
+    { id: 'tipologia', label: 'Tipología', visible: true, obligatorio: false, defecto: 'Plurifamiliar', tipo: 'select', grupo: 'suelo', opciones: ['VPP Plurifamiliar','VPP Unifamiliar','Libre Plurifamiliar','Libre Unifamiliar','Terciario - Hotel','Terciario - Otro','Mixto Plurifamiliar','Mixto Unifamiliar','Hotel-Uni.-Pluri.'] },
     { id: 'clasificacion_suelo', label: 'Tipo de activo', visible: true, obligatorio: false, defecto: 'Suelo finalista', tipo: 'select', grupo: 'suelo', opciones: ['Suelo finalista','Edificio','Suelo pdt Urb.','Suelo pdt Arq.','WIP'] },
     { id: 'uso_suelo', label: 'Uso del suelo', visible: false, obligatorio: false, defecto: 'Residencial', tipo: 'select', grupo: 'suelo', opciones: ['Residencial','Terciario','Mixto','Industrial'] },
     { id: 'riesgo_urbanistico', label: 'Riesgo urbanístico', visible: true, obligatorio: false, defecto: 'medio', tipo: 'select', grupo: 'suelo', opciones: ['bajo','medio','alto','muy_alto'] },
@@ -3845,8 +3891,8 @@ const DEFAULT_PLANTILLA = [
     { id: 'inversion_estimada', label: 'Inversión suelo (€)', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
     { id: 'volumen_ventas', label: 'Volumen ventas estimado (€)', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
     { id: 'rentabilidad_estimada', label: 'Rentabilidad estimada (%)', visible: false, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
-    { id: 'vertical', label: 'Vertical de negocio', visible: true, obligatorio: false, defecto: 'Living', tipo: 'select', grupo: 'clasificacion', opciones: ['Living','Inversión Patrimonial','Hospitality'] },
-    { id: 'negocio', label: 'Tipo de negocio', visible: true, obligatorio: false, defecto: 'Cooperativa', tipo: 'select', grupo: 'clasificacion', opciones: ['Cooperativa','P. Tradicional'] },
+    { id: 'vertical', label: 'Vertical de negocio', visible: true, obligatorio: false, defecto: 'Living', tipo: 'select', grupo: 'clasificacion', opciones: ['Living','Inversión Patrimonial','Investment'] },
+    { id: 'negocio', label: 'Tipo de negocio', visible: true, obligatorio: false, defecto: 'Cooperativa', tipo: 'select', grupo: 'clasificacion', opciones: ['Cooperativa','Venta libre','Hotel','Otros'] },
     { id: 'observaciones', label: 'Observaciones', visible: true, obligatorio: false, defecto: '', tipo: 'textarea', grupo: 'otros' },
 ];
 
