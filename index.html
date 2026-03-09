@@ -647,20 +647,24 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <div id="page-dashboard" class="page active">
     <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:20px;">Dashboard de Expansión</h2>
     <div class="kpi-grid" id="dashKPIs"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="dashCharts">
-        <div class="card"><div class="card-header"><h2>Pipeline por Estado</h2></div><div class="card-body"><canvas id="chartEstados"></canvas></div></div>
-        <div class="card"><div class="card-header"><h2>Evolución Mensual</h2></div><div class="card-body"><canvas id="chartMensual"></canvas></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="dashCharts">
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pipeline por Estado</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartEstados" style="max-height:180px;"></canvas></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Evolución Mensual</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartMensual" style="max-height:180px;"></canvas></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Distribución Score</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartScoreDist" style="max-height:180px;"></canvas></div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:20px;" id="dashCharts2">
-        <div class="card"><div class="card-header"><h2>Por Vertical</h2></div><div class="card-body"><canvas id="chartVertical"></canvas></div></div>
-        <div class="card"><div class="card-header"><h2>Por Tipología</h2></div><div class="card-body"><canvas id="chartTipologia"></canvas></div></div>
-        <div class="card"><div class="card-header"><h2>Distribución Score</h2></div><div class="card-body"><canvas id="chartScoreDist"></canvas></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;" id="dashCharts2">
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Desglose por Vertical y Estado</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashVerticalMatrix"></div></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Resumen por Negocio</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashNegocioSummary"></div></div></div>
     </div>
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-top:20px;">
-        <div class="card"><div class="card-header"><h2>Top Oportunidades por Score</h2></div><div class="card-body"><div id="dashTopOps"></div></div></div>
-        <div class="card"><div class="card-header"><h2>Pendientes de Aprobación</h2></div><div class="card-body"><div id="dashPendientes"></div></div></div>
+    <div class="card" style="margin-top:16px;">
+        <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Velocidad del Pipeline y Conversión</h2></div>
+        <div class="card-body" style="padding:8px 12px;"><div id="dashVelocityPanel"></div></div>
     </div>
-    <div class="card" style="margin-top:20px;"><div class="card-header"><h2>Operaciones Estancadas (&gt;30 días sin movimiento)</h2></div><div class="card-body"><div id="dashEstancadas"></div></div></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Top Oportunidades por Score</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashTopOps"></div></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pendientes de Aprobación</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashPendientes"></div></div></div>
+    </div>
+    <div class="card" style="margin-top:16px;"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Operaciones Estancadas (&gt;30 días sin movimiento)</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashEstancadas"></div></div></div>
 </div>
 
 <!-- ===== PAGE: SUELOS (Alta + Listado) ===== -->
@@ -797,6 +801,13 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <button class="btn btn-primary" id="btnVistaKanban" onclick="setPipelineView('kanban')"><i class="fas fa-columns"></i> Kanban</button>
         </div>
     </div>
+    <div id="pipelineKanbanFilters" style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
+        <span style="font-size:12px;color:var(--text-light);">Filtrar:</span>
+        <button class="btn btn-outline" style="font-size:11px;padding:3px 10px;" onclick="filterKanbanVertical('')">Todas</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:3px 10px;border-color:#3b82f6;color:#3b82f6;" onclick="filterKanbanVertical('Living')">Living</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:3px 10px;border-color:#8b5cf6;color:#8b5cf6;" onclick="filterKanbanVertical('Investment')">Investment</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:3px 10px;border-color:#f59e0b;color:#f59e0b;" onclick="filterKanbanVertical('Inversión Patrimonial')">Inv. Patrimonial</button>
+    </div>
     <div id="pipelineKanban" class="kanban-board"></div>
     <div id="pipelineTabla" class="hidden">
         <div id="pipelineStats" style="margin-bottom:8px;"></div>
@@ -835,10 +846,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <div id="page-fase0" class="page">
     <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:20px;">Fase 0 - Análisis Preliminar</h2>
     <div class="kpi-grid" id="fase0KPIs"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-        <div class="card"><div class="card-header"><h2>Distribución por Tipología</h2></div><div class="card-body"><canvas id="chartFase0Tipo"></canvas></div></div>
-        <div class="card"><div class="card-header"><h2>Distribución por Ciudad</h2></div><div class="card-body"><canvas id="chartFase0Ciudad"></canvas></div></div>
-    </div>
+    <div id="fase0VelocityBar" style="margin-bottom:16px;"></div>
     <div class="search-bar" style="margin-bottom:8px;">
         <input type="text" class="search-input" id="fase0Search" placeholder="Buscar por nombre, ciudad, responsable..." oninput="renderFase('0')">
         <button class="btn btn-outline btn-sm" onclick="gfClearAll('fase0')" title="Limpiar todos los filtros"><i class="fas fa-filter-circle-xmark"></i> Limpiar filtros</button>
@@ -868,10 +876,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <div id="page-fase1" class="page">
     <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:20px;">Fase 1 - Análisis Técnico</h2>
     <div class="kpi-grid" id="fase1KPIs"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-        <div class="card"><div class="card-header"><h2>Distribución por Tipología</h2></div><div class="card-body"><canvas id="chartFase1Tipo"></canvas></div></div>
-        <div class="card"><div class="card-header"><h2>Distribución por Ciudad</h2></div><div class="card-body"><canvas id="chartFase1Ciudad"></canvas></div></div>
-    </div>
+    <div id="fase1VelocityBar" style="margin-bottom:16px;"></div>
     <div class="search-bar" style="margin-bottom:8px;">
         <input type="text" class="search-input" id="fase1Search" placeholder="Buscar por nombre, ciudad, responsable..." oninput="renderFase('1')">
         <button class="btn btn-outline btn-sm" onclick="gfClearAll('fase1')" title="Limpiar todos los filtros"><i class="fas fa-filter-circle-xmark"></i> Limpiar filtros</button>
@@ -1595,7 +1600,7 @@ function migrateLocalToSupabase() {
     function addLog(msg) { if (log) log.innerHTML += msg + '\n'; }
 
     // Column whitelist per table
-    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','sharepoint_url','created_at'];
+    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','fechas_fase','sharepoint_url','created_at'];
     var CONTACTO_COLS = ['id','nombre','empresa','tipo','telefono','email','notas','created_at'];
     var ACTIVIDAD_COLS = ['id','suelo_id','tipo','descripcion','fecha','proximos_pasos','created_at'];
 
@@ -1920,9 +1925,9 @@ function calculateScore(suelo) {
     if (ratioVal === undefined || ratioVal === null || ratioVal === 0) ratioVal = 25;
     scores.ratio = scoreRangoInv(ratioVal, rra);
 
-    // 7. Precio Suelo (rango configurable)
-    var ri = rangos.inversion || {optMin:1500000,optMax:8000000,extMin:500000,extMax:20000000};
-    scores.inversion = scoreRango(suelo.precio_suelo || 0, ri);
+    // 7. €/m²t (menor = mejor, rango invertido configurable)
+    var ri = rangos.inversion || {optMin:100,optMax:500,extMin:50,extMax:1000};
+    scores.inversion = scoreRangoInv(parseFloat(suelo.precio_m2t) || 0, ri);
 
     // 8. Riesgo Urbanístico (automático)
     var riesgoMap = {'bajo':100,'medio':65,'alto':30,'muy_alto':0};
@@ -2914,24 +2919,57 @@ function renderPipeline() {
     renderPipelineTable();
 }
 
+var VERTICAL_COLORS = {'Living':'#3b82f6','Investment':'#8b5cf6','Inversión Patrimonial':'#f59e0b','Sin definir':'#94a3b8'};
+
 function renderKanban() {
     const board = document.getElementById('pipelineKanban');
     board.innerHTML = PIPELINE_ESTADOS.map(estado => {
-        const ops = DB.suelos.filter(s => s.pipeline_estado === estado.id).sort((a,b) => b.score_total - a.score_total);
+        const ops = DB.suelos.filter(s => s.pipeline_estado === estado.id && (!_kanbanVerticalFilter || (s.vertical||'') === _kanbanVerticalFilter)).sort((a,b) => b.score_total - a.score_total);
+        // Group by vertical
+        const byVertical = {};
+        ops.forEach(s => {
+            const v = s.vertical || 'Sin definir';
+            if (!byVertical[v]) byVertical[v] = [];
+            byVertical[v].push(s);
+        });
+        const verticals = Object.keys(byVertical).sort();
+        const cardsHtml = verticals.map(v => {
+            const vColor = VERTICAL_COLORS[v] || '#94a3b8';
+            const items = byVertical[v];
+            return `<div class="kanban-vert-group" style="margin-bottom:6px;">
+                <div style="font-size:10px;font-weight:700;color:${vColor};text-transform:uppercase;letter-spacing:0.5px;padding:4px 6px;border-left:3px solid ${vColor};margin-bottom:3px;background:${vColor}11;">${v} (${items.length})</div>
+                ${items.map(s => {
+                    const sc = getScoreClass(s.score_total);
+                    const negBadge = s.negocio ? '<span style="font-size:9px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:var(--text-light);">'+s.negocio+'</span>' : '';
+                    return `<div class="kanban-card" onclick="showDetalle('${s.id}')" style="border-left:3px solid ${vColor};">
+                        <div class="card-title" style="font-size:12px;">${s.nombre}</div>
+                        <div class="card-meta">${s.ciudad} · ${s.num_viviendas || '?'} viv · <span class="score-dot ${sc.class}"></span>${s.score_total} ${negBadge}</div>
+                        ${s.precio_suelo ? '<div class="card-meta">'+fmtMoney(s.precio_suelo)+(s.precio_m2t ? ' · '+s.precio_m2t+'€/m²t' : '')+'</div>' : ''}
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }).join('');
+
         return `<div class="kanban-column">
             <div class="kanban-col-header" style="border-top:3px solid ${estado.color};">
                 <span>${estado.id}</span><span class="count">${ops.length}</span>
             </div>
-            <div class="kanban-cards">${ops.map(s => {
-                const sc = getScoreClass(s.score_total);
-                return `<div class="kanban-card" onclick="showDetalle('${s.id}')">
-                    <div class="card-title">${s.nombre}</div>
-                    <div class="card-meta">${s.ciudad} · ${s.num_viviendas || '?'} viv · <span class="score-dot ${sc.class}"></span>${s.score_total}</div>
-                    ${s.precio_suelo ? '<div class="card-meta">' + fmtMoney(s.precio_suelo) + '</div>' : ''}
-                </div>`;
-            }).join('')}</div>
+            <div class="kanban-cards">${cardsHtml}</div>
         </div>`;
     }).join('');
+}
+
+
+var _kanbanVerticalFilter = '';
+function filterKanbanVertical(v) {
+    _kanbanVerticalFilter = v;
+    // Update button styles
+    document.querySelectorAll('#pipelineKanbanFilters .btn').forEach(function(b) {
+        var isActive = (v === '' && b.textContent === 'Todas') || b.textContent.includes(v);
+        b.style.fontWeight = isActive ? '700' : '400';
+        b.style.background = isActive ? (v === '' ? 'var(--accent)' : b.style.borderColor) + '15' : 'transparent';
+    });
+    renderKanban();
 }
 
 function renderPipelineTable() {
@@ -3006,7 +3044,7 @@ function renderPipelineTable() {
             gfBuildHeader(tableId, 'score_range', 'Score'+arrow('score_total'), sf('score_total')) +
             '<th>Pendiente</th>' +
             gfBuildHeader(tableId, 'responsable', 'Responsable'+arrow('responsable'), sf('responsable')) +
-            gfBuildHeader(tableId, 'fecha_captacion', 'Días'+arrow('fecha_captacion'), sf('fecha_captacion')) +
+            gfBuildHeader(tableId, 'fecha_captacion', 'En fase'+arrow('fecha_captacion'), sf('fecha_captacion')) +
             '<th>Acciones</th>';
     }
 
@@ -3014,6 +3052,7 @@ function renderPipelineTable() {
         const est = PIPELINE_ESTADOS.find(e => e.id === s.pipeline_estado) || { color: '#94a3b8' };
         const sc = getScoreClass(s.score_total);
         const dias = daysSince(s.fecha_captacion);
+        const diasF = diasEnFaseActual(s);
         const lastAct = typeof getLastActivity === 'function' ? getLastActivity(s) : '-';
         const _pa = typeof getPendingApprover === 'function' ? getPendingApprover(s) : null;
         const pending = _pa && _pa.text ? '<span style="color:'+(_pa.color||'inherit')+'">'+_pa.text+'</span>' : '-';
@@ -3030,7 +3069,7 @@ function renderPipelineTable() {
             '<td class="text-center"><span class="score-dot ' + sc.class + '"></span><strong>' + s.score_total + '</strong></td>' +
             '<td style="font-size:11px;">' + pending + '</td>' +
             '<td style="font-size:11px;">' + (s.responsable || '-') + '</td>' +
-            '<td class="text-center">' + dias + 'd</td>' +
+            '<td class="text-center" style="font-weight:600;color:'+(diasF>15?'var(--danger)':diasF>7?'var(--warning)':'var(--success)')+';">' + diasF + 'd</td>' +
             '<td onclick="event.stopPropagation();" style="white-space:nowrap;">' +
                 '<button class="btn btn-outline btn-sm" onclick="showDetalle(\'' + s.id + '\')" style="padding:3px 6px;"><i class="fas fa-eye"></i></button> ' +
                 buildFaseStateDropdown(s.id, s.pipeline_estado) +
@@ -3058,8 +3097,8 @@ var SCORING_CRITERIOS = [
       rangoDefault: {optMin:12, optMax:25, extMin:8, extMax:35} },
     { id: 'ratio', nombre: 'Ratio Suelo/Ventas', tipo: 'rango_inv', campo: 'ratio_suelo_ventas', descripcion: 'Menor es mejor (%)',
       rangoDefault: {optMin:5, optMax:15, extMin:3, extMax:25} },
-    { id: 'inversion', nombre: 'Precio Suelo', tipo: 'rango', campo: 'precio_suelo', descripcion: 'Rango óptimo (€)',
-      rangoDefault: {optMin:1500000, optMax:8000000, extMin:500000, extMax:20000000}, fmt: 'money' },
+    { id: 'inversion', nombre: '€/m²t', tipo: 'rango_inv', campo: 'precio_m2t', descripcion: 'Menor €/m²t = mejor oportunidad',
+      rangoDefault: {optMin:100, optMax:500, extMin:50, extMax:1000} },
     { id: 'riesgo', nombre: 'Riesgo Urbanístico', tipo: 'riesgo', descripcion: 'Bajo = máx (automático)' },
 ];
 
@@ -3260,6 +3299,7 @@ function renderDashboard() {
 
     // Charts
     renderDashCharts();
+    renderDashVelocity();
 
     // Pendientes de aprobación
     const pendientes = DB.suelos.filter(s => {
@@ -3301,64 +3341,219 @@ function renderDashCharts() {
     // Destroy existing
     if (chartEstados) chartEstados.destroy();
     if (chartMensual) chartMensual.destroy();
+    if (window._chartScore) window._chartScore.destroy();
 
+    var activos = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada');
+
+    // 1. Pipeline bar chart (compact)
     const estadoCounts = {};
     PIPELINE_ESTADOS.forEach(e => estadoCounts[e.id] = 0);
     DB.suelos.forEach(s => { if (estadoCounts[s.pipeline_estado] !== undefined) estadoCounts[s.pipeline_estado]++; });
-
+    // Short labels
+    var shortLabels = Object.keys(estadoCounts).map(l => l.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1 - Análisis Técnico','Fase 1'));
     chartEstados = new Chart(document.getElementById('chartEstados'), {
         type: 'bar',
-        data: { labels: Object.keys(estadoCounts), datasets: [{ data: Object.values(estadoCounts), backgroundColor: PIPELINE_ESTADOS.map(e => e.color + 'cc'), borderColor: '#C4A55A', borderWidth: 1 }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        data: { labels: shortLabels, datasets: [{ data: Object.values(estadoCounts), backgroundColor: PIPELINE_ESTADOS.map(e => e.color + 'cc'), borderWidth: 0, borderRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 10, font:{size:10} } }, x: { ticks: { font:{size:9}, maxRotation:45 } } } }
     });
 
-    // Vertical chart
-    const vertCount = {};
-    DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').forEach(s => { const v = s.vertical || 'Sin definir'; vertCount[v] = (vertCount[v]||0) + 1; });
-    if (window._chartVertical) window._chartVertical.destroy();
-    window._chartVertical = new Chart(document.getElementById('chartVertical'), {
-        type: 'doughnut',
-        data: { labels: Object.keys(vertCount), datasets: [{ data: Object.values(vertCount), backgroundColor: ['#C4A55A','#4A4A4A','#8b5cf6','#10b981','#ef4444'] }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
-    });
-
-    // Tipologia chart
-    const tipoCount = {};
-    DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').forEach(s => { const t = s.tipologia || 'Sin definir'; tipoCount[t] = (tipoCount[t]||0) + 1; });
-    if (window._chartTipologia) window._chartTipologia.destroy();
-    window._chartTipologia = new Chart(document.getElementById('chartTipologia'), {
-        type: 'doughnut',
-        data: { labels: Object.keys(tipoCount), datasets: [{ data: Object.values(tipoCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6'] }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
-    });
-
-    // Score distribution chart
-    const scoreBands = { '85+ Muy Interesante': 0, '70-84 Interesante': 0, '50-69 Media': 0, '<50 Baja': 0 };
-    DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').forEach(s => {
-        if (s.score_total >= 85) scoreBands['85+ Muy Interesante']++;
-        else if (s.score_total >= 70) scoreBands['70-84 Interesante']++;
-        else if (s.score_total >= 50) scoreBands['50-69 Media']++;
-        else scoreBands['<50 Baja']++;
-    });
-    if (window._chartScore) window._chartScore.destroy();
-    window._chartScore = new Chart(document.getElementById('chartScoreDist'), {
-        type: 'bar',
-        data: { labels: Object.keys(scoreBands), datasets: [{ data: Object.values(scoreBands), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444'] }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } } }
-    });
-
-    // Monthly
+    // 2. Monthly line chart (compact)
     const months = {};
     DB.suelos.forEach(s => {
         const m = (s.fecha_captacion || '').substring(0, 7);
         if (m) months[m] = (months[m] || 0) + 1;
     });
-    const sortedM = Object.keys(months).sort();
+    const sortedM = Object.keys(months).sort().slice(-12); // last 12 months
     chartMensual = new Chart(document.getElementById('chartMensual'), {
         type: 'line',
-        data: { labels: sortedM, datasets: [{ label: 'Nuevas', data: sortedM.map(m => months[m]), borderColor: '#C4A55A', backgroundColor: '#C4A55A22', fill: true, tension: .3 }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        data: { labels: sortedM.map(m => m.substring(5)), datasets: [{ label: 'Nuevas', data: sortedM.map(m => months[m]), borderColor: '#C4A55A', backgroundColor: '#C4A55A22', fill: true, tension: .3, pointRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks:{font:{size:10}} }, x: { ticks:{font:{size:10}} } } }
     });
+
+    // 3. Score distribution (compact horizontal)
+    const scoreBands = { '85+ Muy Int.': 0, '70-84 Inter.': 0, '50-69 Media': 0, '<50 Baja': 0 };
+    activos.forEach(s => {
+        if (s.score_total >= 85) scoreBands['85+ Muy Int.']++;
+        else if (s.score_total >= 70) scoreBands['70-84 Inter.']++;
+        else if (s.score_total >= 50) scoreBands['50-69 Media']++;
+        else scoreBands['<50 Baja']++;
+    });
+    window._chartScore = new Chart(document.getElementById('chartScoreDist'), {
+        type: 'bar',
+        data: { labels: Object.keys(scoreBands), datasets: [{ data: Object.values(scoreBands), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444'], borderWidth: 0, borderRadius: 3 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks:{font:{size:10}} }, y: { ticks:{font:{size:10}} } } }
+    });
+
+    // 4. Vertical × Estado matrix (replaces donut)
+    renderVerticalMatrix(activos);
+
+    // 5. Negocio summary (replaces tipología donut)
+    renderNegocioSummary(activos);
+}
+
+function renderVerticalMatrix(activos) {
+    var el = document.getElementById('dashVerticalMatrix');
+    if (!el) return;
+    var verticals = {};
+    activos.forEach(s => {
+        var v = s.vertical || 'Sin definir';
+        var e = s.pipeline_estado;
+        if (!verticals[v]) verticals[v] = {};
+        verticals[v][e] = (verticals[v][e] || 0) + 1;
+    });
+    var vNames = Object.keys(verticals).sort();
+    var estados = PIPELINE_ESTADOS.filter(e => e.id !== 'Descartada');
+    var shortEst = function(e){ return e.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1 - Análisis Técnico','Fase 1'); };
+    el.innerHTML = '<table class="data-table" style="font-size:11px;"><thead><tr><th>Vertical</th>' +
+        estados.map(e => '<th style="text-align:center;font-size:10px;">'+shortEst(e.id)+'</th>').join('') +
+        '<th style="text-align:center;font-weight:700;">Total</th></tr></thead><tbody>' +
+        vNames.map(v => {
+            var vColor = (typeof VERTICAL_COLORS !== 'undefined' && VERTICAL_COLORS[v]) || '#94a3b8';
+            var total = Object.values(verticals[v]).reduce((s,n) => s+n, 0);
+            return '<tr><td style="font-weight:600;color:'+vColor+';">'+v+'</td>' +
+                estados.map(e => {
+                    var n = verticals[v][e.id] || 0;
+                    return '<td style="text-align:center;'+(n ? 'font-weight:600;color:'+e.color : 'color:#ccc')+'">'+( n || '–')+'</td>';
+                }).join('') +
+                '<td style="text-align:center;font-weight:700;">'+total+'</td></tr>';
+        }).join('') +
+        '<tr style="border-top:2px solid var(--border);font-weight:700;"><td>Total</td>' +
+        estados.map(e => {
+            var t = activos.filter(s => s.pipeline_estado === e.id).length;
+            return '<td style="text-align:center;">'+t+'</td>';
+        }).join('') +
+        '<td style="text-align:center;">'+activos.length+'</td></tr>' +
+        '</tbody></table>';
+}
+
+function renderNegocioSummary(activos) {
+    var el = document.getElementById('dashNegocioSummary');
+    if (!el) return;
+    var negocios = {};
+    activos.forEach(s => {
+        var n = s.negocio || 'Cooperativa';
+        if (!negocios[n]) negocios[n] = { count: 0, inv: 0, precioSuelo: 0, m2t: 0, m2tCount: 0, scoreSum: 0 };
+        negocios[n].count++;
+        negocios[n].inv += (s.inversion_estimada || 0);
+        negocios[n].precioSuelo += (s.precio_suelo || 0);
+        if (s.precio_m2t) { negocios[n].m2t += s.precio_m2t; negocios[n].m2tCount++; }
+        negocios[n].scoreSum += (s.score_total || 0);
+    });
+    var nNames = Object.keys(negocios).sort();
+    el.innerHTML = '<table class="data-table" style="font-size:11px;"><thead><tr><th>Negocio</th><th style="text-align:right;">Ops</th><th style="text-align:right;">Precio Suelo</th><th style="text-align:right;">€/m²t medio</th><th style="text-align:right;">Score medio</th></tr></thead><tbody>' +
+        nNames.map(n => {
+            var d = negocios[n];
+            var avgM2t = d.m2tCount ? Math.round(d.m2t / d.m2tCount) : 0;
+            var avgScore = d.count ? Math.round(d.scoreSum / d.count) : 0;
+            return '<tr><td style="font-weight:600;">'+n+'</td><td style="text-align:right;">'+d.count+'</td><td style="text-align:right;">'+fmtMoney(d.precioSuelo)+'</td><td style="text-align:right;">'+(avgM2t ? avgM2t.toLocaleString('es-ES')+'€' : '–')+'</td><td style="text-align:right;"><strong>'+avgScore+'</strong></td></tr>';
+        }).join('') +
+        '</tbody></table>';
+}
+
+
+function renderDashVelocity() {
+    var el = document.getElementById('dashVelocityPanel');
+    if (!el) return;
+    var activos = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada');
+
+    // Funnel: conversion rates between stages
+    var counts = {};
+    PIPELINE_ESTADOS.forEach(e => counts[e.id] = 0);
+    DB.suelos.forEach(s => { if (counts[s.pipeline_estado] !== undefined) counts[s.pipeline_estado]++; });
+    var funnelSteps = ['Captada','Fase 0 - Análisis Preliminar','Fase 1 - Análisis Técnico','Ganada'];
+    var funnelCounts = funnelSteps.map(f => counts[f] || 0);
+    // Add suelos that PASSED through each stage (current + those that moved beyond)
+    var passedThrough = {};
+    funnelSteps.forEach((f,i) => {
+        passedThrough[f] = DB.suelos.filter(s => {
+            if (s.pipeline_estado === f) return true;
+            // Check if fechas_fase has this stage
+            if (s.fechas_fase && s.fechas_fase[f]) return true;
+            // Fallback: if current stage is later than this one
+            var currentIdx = funnelSteps.indexOf(s.pipeline_estado);
+            return currentIdx > i;
+        }).length;
+    });
+
+    // Velocity: avg days between stages
+    var velocities = {};
+    ['Fase 0 - Análisis Preliminar','Fase 1 - Análisis Técnico','Ganada'].forEach(function(fase) {
+        var dias = DB.suelos.map(s => diasHastaFase(s, fase)).filter(d => d !== null && d >= 0);
+        velocities[fase] = dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null;
+    });
+
+    // Avg days in each active phase
+    var avgInPhase = {};
+    ['Captada','Fase 0 - Análisis Preliminar','Fase 1 - Análisis Técnico'].forEach(function(fase) {
+        var ops = DB.suelos.filter(s => s.pipeline_estado === fase);
+        var dias = ops.map(s => diasEnFaseActual(s));
+        avgInPhase[fase] = dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null;
+    });
+
+    var shortName = function(f) { return f.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1 - Análisis Técnico','Fase 1'); };
+
+    // Build funnel visualization
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+
+    // Left: Funnel
+    html += '<div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;margin-bottom:8px;">Funnel de conversión</div>';
+    var maxCount = Math.max(...funnelCounts, 1);
+    funnelSteps.forEach(function(f, i) {
+        var c = counts[f] || 0;
+        var passed = passedThrough[f] || 0;
+        var pct = i > 0 && passedThrough[funnelSteps[0]] > 0 ? Math.round(passed/passedThrough[funnelSteps[0]]*100) : (i===0 ? 100 : 0);
+        var barW = Math.max(5, Math.round(c/maxCount*100));
+        var color = (PIPELINE_ESTADOS.find(e=>e.id===f)||{}).color || '#94a3b8';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+        html += '<span style="width:60px;font-size:11px;text-align:right;color:var(--text-light);">'+shortName(f)+'</span>';
+        html += '<div style="flex:1;height:20px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="width:'+barW+'%;height:100%;background:'+color+';border-radius:4px;display:flex;align-items:center;padding-left:6px;"><span style="font-size:10px;color:#fff;font-weight:700;">'+c+'</span></div></div>';
+        if (i > 0) {
+            var convRate = funnelCounts[i-1] > 0 ? Math.round(c/passedThrough[funnelSteps[i-1]]*100) : 0;
+            html += '<span style="font-size:10px;color:var(--text-light);width:35px;">'+pct+'%</span>';
+        } else {
+            html += '<span style="width:35px;"></span>';
+        }
+        html += '</div>';
+    });
+    // Also show Seguimiento/Vendida/Descartada counts inline
+    html += '<div style="display:flex;gap:12px;margin-top:8px;padding-top:6px;border-top:1px solid var(--border);">';
+    ['Seguimiento','Vendida','Descartada'].forEach(function(f) {
+        var c = counts[f]||0;
+        var color = (PIPELINE_ESTADOS.find(e=>e.id===f)||{}).color || '#94a3b8';
+        html += '<span style="font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+';margin-right:3px;"></span>'+f+': <strong>'+c+'</strong></span>';
+    });
+    html += '</div>';
+    html += '</div>';
+
+    // Right: Velocity metrics
+    html += '<div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;margin-bottom:8px;">Velocidad de análisis</div>';
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 0;font-weight:600;">Fase</td><td style="text-align:right;">Ops actuales</td><td style="text-align:right;">Media días en fase</td><td style="text-align:right;">Captada→Fase</td></tr>';
+    ['Captada','Fase 0 - Análisis Preliminar','Fase 1 - Análisis Técnico'].forEach(function(f) {
+        var ops = DB.suelos.filter(s => s.pipeline_estado === f);
+        var avg = avgInPhase[f];
+        var vel = velocities[f];
+        var avgColor = avg !== null ? (avg > 20 ? '#ef4444' : avg > 10 ? '#f59e0b' : '#10b981') : '#94a3b8';
+        html += '<tr style="border-bottom:1px solid #f1f5f9;">';
+        html += '<td style="padding:4px 0;font-weight:600;font-size:11px;">'+shortName(f)+'</td>';
+        html += '<td style="text-align:right;">'+ops.length+'</td>';
+        html += '<td style="text-align:right;font-weight:700;color:'+avgColor+';">'+(avg !== null ? avg+'d' : '–')+'</td>';
+        html += '<td style="text-align:right;">'+(vel !== null ? vel+'d' : '–')+'</td>';
+        html += '</tr>';
+    });
+    html += '</table>';
+
+    // Overall pipeline velocity: avg time from Captada to Ganada
+    var ganadaDias = DB.suelos.filter(s => s.pipeline_estado === 'Ganada').map(s => diasHastaFase(s,'Ganada')).filter(d => d !== null);
+    var avgGanada = ganadaDias.length ? Math.round(ganadaDias.reduce((a,b)=>a+b,0)/ganadaDias.length) : null;
+    html += '<div style="margin-top:10px;padding:8px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;">';
+    html += '<span style="font-size:11px;color:#166534;font-weight:600;">Captada → Ganada: '+(avgGanada !== null ? '<strong>'+avgGanada+' días</strong> (media de '+ganadaDias.length+' ops)' : 'sin datos aún')+'</span>';
+    html += '</div>';
+
+    html += '</div></div>';
+    el.innerHTML = html;
 }
 
 // ============================================================
@@ -3969,13 +4164,21 @@ function renderFase(num) {
     const avgDays = ops.length ? Math.round(ops.reduce((s, o) => s + daysSince(o.fecha_captacion), 0) / ops.length) : 0;
     const docsComplete = ops.filter(s => { const d = s.docs || {}; return Object.values(d).filter(Boolean).length >= 4; }).length;
 
+    // Velocity metrics
+    var diasEnFaseArr = ops.map(s => diasEnFaseActual(s)).filter(d => d !== null);
+    var avgDiasEnFase = diasEnFaseArr.length ? Math.round(diasEnFaseArr.reduce((a,b)=>a+b,0)/diasEnFaseArr.length) : 0;
+    var maxDiasEnFase = diasEnFaseArr.length ? Math.max(...diasEnFaseArr) : 0;
+    var diasHastaArr = ops.map(s => diasHastaFase(s, faseId)).filter(d => d !== null);
+    var avgDiasHasta = diasHastaArr.length ? Math.round(diasHastaArr.reduce((a,b)=>a+b,0)/diasHastaArr.length) : '-';
+    var opsAlerta = ops.filter(s => diasEnFaseActual(s) > 15).length;
+
     document.getElementById(tableId + 'KPIs').innerHTML = [
         { icon: 'fas fa-layer-group', bg: '#dbeafe', color: '#1d4ed8', value: ops.length, label: 'Operaciones' },
         { icon: 'fas fa-euro-sign', bg: '#fef3c7', color: '#d97706', value: fmtMoney(totalInv), label: 'Inversión Total' },
-        { icon: 'fas fa-home', bg: '#d1fae5', color: '#059669', value: totalViv, label: 'Viviendas Totales' },
+        { icon: 'fas fa-stopwatch', bg: '#fce7f3', color: '#db2777', value: avgDiasEnFase + 'd', label: 'Media días en fase' },
+        { icon: 'fas fa-tachometer-alt', bg: '#d1fae5', color: '#059669', value: avgDiasHasta !== '-' ? avgDiasHasta + 'd' : '-', label: 'Captada → Fase (media)' },
+        { icon: 'fas fa-exclamation-triangle', bg: '#fee2e2', color: '#dc2626', value: opsAlerta, label: '>15 días en fase' },
         { icon: 'fas fa-star', bg: '#e0e7ff', color: '#4338ca', value: avgScore, label: 'Score Medio' },
-        { icon: 'fas fa-clock', bg: '#fee2e2', color: '#dc2626', value: avgDays + 'd', label: 'Días Medio' },
-        { icon: 'fas fa-file-check', bg: '#f3e8ff', color: '#7c3aed', value: docsComplete + '/' + ops.length, label: 'Docs Completos' },
     ].map(k => '<div class="kpi-card"><div class="kpi-icon" style="background:'+k.bg+';color:'+k.color+';"><i class="'+k.icon+'"></i></div><div class="kpi-value">'+k.value+'</div><div class="kpi-label">'+k.label+'</div></div>').join('');
 
     // Stats bar
@@ -3992,24 +4195,33 @@ function renderFase(num) {
             (activeFilters ? '<div class="excel-stat" style="color:var(--gold);"><i class="fas fa-filter"></i> '+activeFilters+' filtro'+(activeFilters>1?'s':'')+' activo'+(activeFilters>1?'s':'')+'  <button onclick="gfClearAll(\''+tableId+'\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;text-decoration:underline;">Limpiar</button></div>' : '');
     }
 
-    // Charts
-    if (chartFaseTipo[num]) chartFaseTipo[num].destroy();
-    if (chartFaseCiudad[num]) chartFaseCiudad[num].destroy();
-    const tipoCount = {};
-    ops.forEach(s => { const t = s.tipologia || 'Sin definir'; tipoCount[t] = (tipoCount[t]||0) + 1; });
-    chartFaseTipo[num] = new Chart(document.getElementById('chartFase' + num + 'Tipo'), {
-        type: 'doughnut',
-        data: { labels: Object.keys(tipoCount), datasets: [{ data: Object.values(tipoCount), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'] }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
-    });
-    const ciudadCount = {};
-    ops.forEach(s => { const c = s.ciudad || 'Sin definir'; ciudadCount[c] = (ciudadCount[c]||0) + 1; });
-    const topCiudades = Object.entries(ciudadCount).sort((a,b) => b[1]-a[1]).slice(0, 8);
-    chartFaseCiudad[num] = new Chart(document.getElementById('chartFase' + num + 'Ciudad'), {
-        type: 'bar',
-        data: { labels: topCiudades.map(c => c[0]), datasets: [{ data: topCiudades.map(c => c[1]), backgroundColor: '#3b82f6cc' }] },
-        options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
+    // Velocity breakdown bar
+    var velEl = document.getElementById(tableId + 'VelocityBar');
+    if (velEl && ops.length > 0) {
+        var buckets = {'<5d':0, '5-10d':0, '10-15d':0, '15-30d':0, '>30d':0};
+        var bucketColors = {'<5d':'#10b981', '5-10d':'#3b82f6', '10-15d':'#f59e0b', '15-30d':'#f97316', '>30d':'#ef4444'};
+        ops.forEach(function(s) {
+            var d = diasEnFaseActual(s);
+            if (d < 5) buckets['<5d']++;
+            else if (d < 10) buckets['5-10d']++;
+            else if (d < 15) buckets['10-15d']++;
+            else if (d < 30) buckets['15-30d']++;
+            else buckets['>30d']++;
+        });
+        var total = ops.length;
+        var barHtml = '<div style="display:flex;align-items:center;gap:12px;"><span style="font-size:11px;color:var(--text-light);white-space:nowrap;">Días en fase:</span>' +
+            '<div style="flex:1;display:flex;height:24px;border-radius:6px;overflow:hidden;">';
+        Object.keys(buckets).forEach(function(k) {
+            var n = buckets[k];
+            if (n === 0) return;
+            var pct = Math.round(n/total*100);
+            barHtml += '<div style="width:'+pct+'%;background:'+bucketColors[k]+';display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;min-width:30px;" title="'+k+': '+n+' ops ('+pct+'%)">'+k+'</div>';
+        });
+        barHtml += '</div></div>';
+        velEl.innerHTML = barHtml;
+    } else if (velEl) {
+        velEl.innerHTML = '';
+    }
 
     // Sort
     const sortField = faseSortBy[num] || 'score_total';
@@ -4733,6 +4945,13 @@ function setEstado(suelo, nuevoEstado) {
     suelo.fase_anterior = suelo.pipeline_estado;
     suelo.pipeline_estado = nuevoEstado;
     suelo.fecha_ultimo_cambio = new Date().toISOString();
+    // Track phase entry timestamps
+    if (!suelo.fechas_fase) suelo.fechas_fase = {};
+    suelo.fechas_fase[nuevoEstado] = new Date().toISOString();
+    // Also record exit from previous phase
+    if (suelo.fase_anterior && suelo.fechas_fase[suelo.fase_anterior] && !suelo.fechas_fase[suelo.fase_anterior + '_salida']) {
+        suelo.fechas_fase[suelo.fase_anterior + '_salida'] = new Date().toISOString();
+    }
     DB.actividades.push({
         id: genId(), suelo_id: suelo.id, tipo: 'nota',
         descripcion: `Cambio de estado: ${suelo.fase_anterior} → ${nuevoEstado}`,
@@ -4742,6 +4961,32 @@ function setEstado(suelo, nuevoEstado) {
     saveDB('suelos');
     saveDB('actividades');
     generateAlerts();
+}
+
+// Helper: days a suelo has spent in its CURRENT phase
+function diasEnFaseActual(s) {
+    if (s.fechas_fase && s.fechas_fase[s.pipeline_estado]) {
+        return daysSince(s.fechas_fase[s.pipeline_estado]);
+    }
+    // Fallback: use fecha_ultimo_cambio or fecha_captacion
+    return daysSince(s.fecha_ultimo_cambio || s.fecha_captacion);
+}
+
+// Helper: days between Captada and entry to a given fase
+function diasHastaFase(s, faseId) {
+    if (!s.fechas_fase || !s.fechas_fase[faseId]) return null;
+    var captada = new Date(s.fecha_captacion);
+    var entrada = new Date(s.fechas_fase[faseId]);
+    return Math.round((entrada - captada) / 86400000);
+}
+
+// Helper: days spent IN a given fase (entry to exit, or entry to now if still there)
+function diasEnFase(s, faseId) {
+    if (!s.fechas_fase || !s.fechas_fase[faseId]) return null;
+    var entrada = new Date(s.fechas_fase[faseId]);
+    var salida = s.fechas_fase[faseId + '_salida'] ? new Date(s.fechas_fase[faseId + '_salida']) : (s.pipeline_estado === faseId ? new Date() : null);
+    if (!salida) return null;
+    return Math.round((salida - entrada) / 86400000);
 }
 
 // ============================================================
