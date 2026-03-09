@@ -1889,7 +1889,7 @@ function calculateScore(suelo) {
     ensurePorNegocio();
     var negocio = suelo.negocio || 'Cooperativa';
     var pesosNeg = DB.scoring.porNegocio[negocio] || DB.scoring.porNegocio['Cooperativa'] || {};
-    var rangos = DB.scoring.rangos || {};
+    var rangos = (DB.scoring.rangosPorNegocio && DB.scoring.rangosPorNegocio[negocio]) || {};
     var weights = {};
     SCORING_CRITERIOS.forEach(function(cr) { weights[cr.id] = (pesosNeg[cr.id] || 0) / 100; });
 
@@ -3119,13 +3119,27 @@ function ensurePorNegocio() {
             if (DB.scoring.porNegocio[n][cr.id] === undefined) DB.scoring.porNegocio[n][cr.id] = (DEFAULT_PESOS[n][cr.id] || 0);
         });
     });
-    // Ensure rangos storage
-    if (!DB.scoring.rangos) DB.scoring.rangos = {};
-    SCORING_CRITERIOS.forEach(function(cr) {
-        if (cr.rangoDefault && !DB.scoring.rangos[cr.id]) {
-            DB.scoring.rangos[cr.id] = Object.assign({}, cr.rangoDefault);
+    // Ensure rangos storage PER NEGOCIO
+    if (!DB.scoring.rangosPorNegocio) DB.scoring.rangosPorNegocio = {};
+    // Migrate old global rangos to per-negocio if needed
+    var _oldRangos = DB.scoring.rangos || null;
+    NEGOCIO_TYPES.forEach(function(n) {
+        if (!DB.scoring.rangosPorNegocio[n]) {
+            DB.scoring.rangosPorNegocio[n] = {};
         }
+        SCORING_CRITERIOS.forEach(function(cr) {
+            if (cr.rangoDefault && !DB.scoring.rangosPorNegocio[n][cr.id]) {
+                // If old global rangos exist, use them as starting point; otherwise use defaults
+                if (_oldRangos && _oldRangos[cr.id]) {
+                    DB.scoring.rangosPorNegocio[n][cr.id] = Object.assign({}, _oldRangos[cr.id]);
+                } else {
+                    DB.scoring.rangosPorNegocio[n][cr.id] = Object.assign({}, cr.rangoDefault);
+                }
+            }
+        });
     });
+    // Remove old global rangos after migration
+    if (DB.scoring.rangos) delete DB.scoring.rangos;
 }
 
 function fmtRangoVal(val, cr) {
@@ -3155,7 +3169,7 @@ function renderScoring() {
         html += '<div style="min-width:140px;"><input type="range" min="0" max="50" value="'+val+'" oninput="updateWeight(\''+cr.id+'\',this.value)"></div>';
         // Row 2: editable ranges (only for rango / rango_inv types)
         if (cr.tipo === 'rango' || cr.tipo === 'rango_inv') {
-            var r = DB.scoring.rangos[cr.id] || cr.rangoDefault;
+            var r = (DB.scoring.rangosPorNegocio[_scoringActiveNeg] && DB.scoring.rangosPorNegocio[_scoringActiveNeg][cr.id]) || cr.rangoDefault;
             var label = cr.tipo === 'rango_inv' ? 'Máx bueno / Máx aceptable' : 'Óptimo mín / Óptimo máx';
             html += '<div style="width:100%;display:flex;gap:8px;align-items:center;margin-top:6px;padding-left:4px;flex-wrap:wrap;">';
             html += '<span style="font-size:11px;color:var(--text-light);min-width:60px;">Rangos:</span>';
@@ -3186,7 +3200,12 @@ function updateWeight(id, val) {
 
 function updateRango(criterioId, key, val) {
     ensurePorNegocio();
-    DB.scoring.rangos[criterioId][key] = parseFloat(val);
+    if (!DB.scoring.rangosPorNegocio[_scoringActiveNeg]) DB.scoring.rangosPorNegocio[_scoringActiveNeg] = {};
+    if (!DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId]) {
+        var cr = SCORING_CRITERIOS.find(function(c){return c.id===criterioId;});
+        DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId] = Object.assign({}, cr ? cr.rangoDefault : {});
+    }
+    DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId][key] = parseFloat(val);
 }
 
 function updateScoringTotal() {
@@ -3214,9 +3233,12 @@ function applyScoring() {
 
 function resetScoring() {
     DB.scoring.porNegocio = JSON.parse(JSON.stringify(DEFAULT_PESOS));
-    DB.scoring.rangos = {};
-    SCORING_CRITERIOS.forEach(function(cr) {
-        if (cr.rangoDefault) DB.scoring.rangos[cr.id] = Object.assign({}, cr.rangoDefault);
+    DB.scoring.rangosPorNegocio = {};
+    NEGOCIO_TYPES.forEach(function(n) {
+        DB.scoring.rangosPorNegocio[n] = {};
+        SCORING_CRITERIOS.forEach(function(cr) {
+            if (cr.rangoDefault) DB.scoring.rangosPorNegocio[n][cr.id] = Object.assign({}, cr.rangoDefault);
+        });
     });
     renderScoring();
 }
