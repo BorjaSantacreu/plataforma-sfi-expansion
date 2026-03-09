@@ -928,20 +928,24 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <!-- ===== PAGE: SCORING ===== -->
 <div id="page-scoring" class="page">
     <div class="flex justify-between items-center mb-16">
-        <h2 style="font-size:20px;font-weight:700;color:var(--primary);">Configuración de Scoring</h2>
+        <h2 style="font-size:20px;font-weight:700;color:var(--primary);">Configuración de Scoring por Negocio</h2>
         <div class="flex gap-8">
             <button class="btn btn-outline" onclick="resetScoring()"><i class="fas fa-undo"></i> Restaurar</button>
             <button class="btn btn-accent" onclick="applyScoring()"><i class="fas fa-check"></i> Aplicar y Recalcular</button>
         </div>
     </div>
     <div class="card"><div class="card-body">
-        <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">Ajusta los pesos de cada criterio. Los pesos deben sumar 100%. Al aplicar, se recalculará el score de todas las oportunidades.</p>
+        <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">Ajusta los pesos de cada criterio por tipo de negocio. Cada pestaña debe sumar 100%.</p>
+        <div id="scoringNegocioTabs" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;"></div>
         <div id="scoringCriteria"></div>
         <div class="scoring-total" id="scoringTotal">Total: 100%</div>
     </div></div>
     <div class="card mt-16">
         <div class="card-header"><h2>Vista previa del ranking</h2></div>
-        <div class="card-body"><div id="scoringPreview"></div></div>
+        <div class="card-body">
+            <div id="scoringPreviewTabs" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px;"></div>
+            <div id="scoringPreview"></div>
+        </div>
     </div>
 </div>
 
@@ -2953,43 +2957,95 @@ function renderPipelineTable() {
 // ============================================================
 // SCORING CONFIG
 // ============================================================
+var _scoringActiveNeg = 'Cooperativa';
+var _previewActiveNeg = 'Todos';
+var NEGOCIO_TYPES = ['Cooperativa','Venta libre','Hotel','Otros'];
+var CRITERIO_DEFAULTS = [
+    { id: 'ciudad', nombre: 'Ciudad Estratégica', descripcion: 'Valencia, Madrid, Barcelona, Málaga = máx' },
+    { id: 'viviendas', nombre: 'Nº Viviendas', descripcion: 'Rango óptimo 80-200' },
+    { id: 'tipologia', nombre: 'Tipología', descripcion: 'Cooperativa plurifamiliar = máx' },
+    { id: 'rentabilidad', nombre: 'Rentabilidad Estimada', descripcion: 'TIR >15% = máx' },
+    { id: 'ratio', nombre: 'Ratio Suelo/Ventas', descripcion: '<15% = máx' },
+    { id: 'inversion', nombre: 'Inversión Total', descripcion: 'Rango óptimo 5-20M€' },
+    { id: 'riesgo', nombre: 'Riesgo Urbanístico', descripcion: 'Bajo = máx' },
+];
+
+function ensurePorNegocio() {
+    if (!DB.scoring.porNegocio) DB.scoring.porNegocio = {};
+    var defaults = { 'Cooperativa': {ciudad:20,viviendas:20,tipologia:10,rentabilidad:15,ratio:15,inversion:10,riesgo:10},
+        'Venta libre': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:25,ratio:15,inversion:10,riesgo:10},
+        'Hotel': {ciudad:25,viviendas:0,tipologia:15,rentabilidad:25,ratio:10,inversion:15,riesgo:10},
+        'Otros': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:20,ratio:15,inversion:15,riesgo:10} };
+    NEGOCIO_TYPES.forEach(function(n) {
+        if (!DB.scoring.porNegocio[n]) DB.scoring.porNegocio[n] = Object.assign({}, defaults[n]);
+    });
+}
+
 function renderScoring() {
-    const container = document.getElementById('scoringCriteria');
-    container.innerHTML = DB.scoring.criterios.map(cr => `
-        <div class="scoring-criterion">
-            <div><div class="criterion-name">${cr.nombre}</div><div class="text-light" style="font-size:11px;">${cr.descripcion}</div></div>
-            <div class="criterion-weight" id="weight-${cr.id}">${cr.peso}%</div>
-            <div><input type="range" min="0" max="40" value="${cr.peso}" oninput="updateWeight('${cr.id}',this.value)"></div>
-        </div>
-    `).join('');
+    ensurePorNegocio();
+    // Render tabs
+    var tabsEl = document.getElementById('scoringNegocioTabs');
+    tabsEl.innerHTML = NEGOCIO_TYPES.map(function(n) {
+        var active = n === _scoringActiveNeg;
+        var total = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
+        var badge = total === 100 ? '<span style="color:#10b981;margin-left:4px;">✓</span>' : '<span style="color:#ef4444;margin-left:4px;">'+total+'%</span>';
+        return '<button class="btn" style="border:none;border-bottom:2px solid '+(active?'var(--accent)':'transparent')+';border-radius:0;padding:8px 16px;font-weight:'+(active?'700':'400')+';color:'+(active?'var(--accent)':'var(--text-light)')+';background:none;cursor:pointer;" onclick="switchScoringTab(\''+n+'\')">'+n+badge+'</button>';
+    }).join('');
+    // Render sliders for active negocio
+    var pesos = DB.scoring.porNegocio[_scoringActiveNeg];
+    var container = document.getElementById('scoringCriteria');
+    container.innerHTML = CRITERIO_DEFAULTS.map(function(cr) {
+        var val = pesos[cr.id] || 0;
+        return '<div class="scoring-criterion"><div><div class="criterion-name">'+cr.nombre+'</div><div class="text-light" style="font-size:11px;">'+cr.descripcion+'</div></div><div class="criterion-weight" id="weight-'+cr.id+'">'+val+'%</div><div><input type="range" min="0" max="50" value="'+val+'" oninput="updateWeight(\''+cr.id+'\',this.value)"></div></div>';
+    }).join('');
     updateScoringTotal();
     renderScoringPreview();
 }
 
+function switchScoringTab(neg) {
+    _scoringActiveNeg = neg;
+    renderScoring();
+}
+
 function updateWeight(id, val) {
-    const cr = DB.scoring.criterios.find(c => c.id === id);
-    if (cr) cr.peso = parseInt(val);
+    ensurePorNegocio();
+    DB.scoring.porNegocio[_scoringActiveNeg][id] = parseInt(val);
     document.getElementById('weight-' + id).textContent = val + '%';
     updateScoringTotal();
 }
 
 function updateScoringTotal() {
-    const total = DB.scoring.criterios.reduce((sum, c) => sum + c.peso, 0);
-    const el = document.getElementById('scoringTotal');
-    el.textContent = `Total: ${total}%`;
+    ensurePorNegocio();
+    var pesos = DB.scoring.porNegocio[_scoringActiveNeg];
+    var total = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (pesos[c.id]||0); },0);
+    var el = document.getElementById('scoringTotal');
+    el.textContent = _scoringActiveNeg + ' — Total: ' + total + '%';
     el.className = 'scoring-total ' + (total === 100 ? 'valid' : 'invalid');
 }
 
 function applyScoring() {
-    const total = DB.scoring.criterios.reduce((sum, c) => sum + c.peso, 0);
-    if (total !== 100) { alert('Los pesos deben sumar 100%. Actualmente suman ' + total + '%'); return; }
+    ensurePorNegocio();
+    var allOk = true;
+    NEGOCIO_TYPES.forEach(function(n) {
+        var t = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
+        if (t !== 100) { allOk = false; alert(n + ': los pesos suman ' + t + '%, deben sumar 100%'); }
+    });
+    if (!allOk) return;
+    // Sync porNegocio to criterios (use Cooperativa as default/base)
+    DB.scoring.criterios.forEach(function(cr) { cr.peso = DB.scoring.porNegocio['Cooperativa'][cr.id] || cr.peso; });
     saveDB('scoring');
     recalcAllScores();
-    renderScoringPreview();
+    renderScoring();
     alert('Scoring recalculado para ' + DB.suelos.length + ' oportunidades');
 }
 
 function resetScoring() {
+    DB.scoring.porNegocio = {
+        'Cooperativa': {ciudad:20,viviendas:20,tipologia:10,rentabilidad:15,ratio:15,inversion:10,riesgo:10},
+        'Venta libre': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:25,ratio:15,inversion:10,riesgo:10},
+        'Hotel': {ciudad:25,viviendas:0,tipologia:15,rentabilidad:25,ratio:10,inversion:15,riesgo:10},
+        'Otros': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:20,ratio:15,inversion:15,riesgo:10}
+    };
     DB.scoring.criterios = [
         { id: 'ciudad', nombre: 'Ciudad Estratégica', peso: 20, descripcion: 'Valencia, Madrid, Barcelona, Málaga = máx' },
         { id: 'viviendas', nombre: 'Nº Viviendas', peso: 15, descripcion: 'Rango óptimo 80-200' },
@@ -3003,14 +3059,29 @@ function resetScoring() {
 }
 
 function renderScoringPreview() {
-    const preview = [...DB.suelos].sort((a,b) => b.score_total - a.score_total).slice(0, 10);
+    // Preview tabs
+    var tabs = ['Todos'].concat(NEGOCIO_TYPES);
+    var tabsEl = document.getElementById('scoringPreviewTabs');
+    if (tabsEl) {
+        tabsEl.innerHTML = tabs.map(function(n) {
+            var active = n === _previewActiveNeg;
+            return '<button class="btn" style="border:none;border-bottom:2px solid '+(active?'var(--accent)':'transparent')+';border-radius:0;padding:6px 12px;font-size:12px;font-weight:'+(active?'700':'400')+';color:'+(active?'var(--accent)':'var(--text-light)')+';background:none;cursor:pointer;" onclick="switchPreviewTab(\''+n+'\')">'+n+'</button>';
+        }).join('');
+    }
+    var filtered = _previewActiveNeg === 'Todos' ? DB.suelos : DB.suelos.filter(function(s){ return (s.negocio||'Cooperativa') === _previewActiveNeg; });
+    var preview = filtered.sort(function(a,b){ return b.score_total - a.score_total; }).slice(0, 10);
     document.getElementById('scoringPreview').innerHTML = preview.length ?
-        '<table class="data-table"><thead><tr><th>Pos</th><th>Nombre</th><th>Ciudad</th><th>Score</th><th>Categoría</th></tr></thead><tbody>' +
-        preview.map((s, i) => {
-            const sc = getScoreClass(s.score_total);
-            return `<tr><td>${i+1}</td><td style="font-weight:600;">${s.nombre}</td><td>${s.ciudad}</td><td><strong>${s.score_total}</strong></td><td><span class="score-dot ${sc.class}"></span>${sc.label}</td></tr>`;
+        '<table class="data-table"><thead><tr><th>Pos</th><th>Nombre</th><th>Ciudad</th><th>Negocio</th><th>Score</th><th>Categoría</th></tr></thead><tbody>' +
+        preview.map(function(s, i) {
+            var sc = getScoreClass(s.score_total);
+            return '<tr><td>'+(i+1)+'</td><td style="font-weight:600;">'+s.nombre+'</td><td>'+s.ciudad+'</td><td>'+(s.negocio||'Cooperativa')+'</td><td><strong>'+s.score_total+'</strong></td><td><span class="score-dot '+sc.class+'"></span>'+sc.label+'</td></tr>';
         }).join('') + '</tbody></table>'
-        : '<p class="text-light text-center" style="padding:20px;">No hay oportunidades para mostrar. Añade suelos primero.</p>';
+        : '<p class="text-light text-center" style="padding:20px;">No hay oportunidades de este tipo.</p>';
+}
+
+function switchPreviewTab(neg) {
+    _previewActiveNeg = neg;
+    renderScoringPreview();
 }
 
 // ============================================================
