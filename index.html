@@ -1057,6 +1057,19 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
     </div>
 </div>
 
+
+    <div class="card mt-16">
+        <div class="card-header"><h2><i class="fas fa-calculator"></i> Parámetros Económicos por Tipología</h2></div>
+        <div class="card-body">
+            <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">Estos parámetros se usan para auto-calcular Inversión Estimada, Ratio S/V y Rentabilidad. Modifica según mercado actual.</p>
+            <div id="paramsEconContainer"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+                <button class="btn btn-accent" onclick="saveParamsEcon()"><i class="fas fa-save"></i> Guardar Parámetros</button>
+                <button class="btn btn-outline" onclick="resetParamsEcon()"><i class="fas fa-undo"></i> Restaurar Defaults</button>
+                <button class="btn btn-outline" onclick="recalcAllEconomics()"><i class="fas fa-sync"></i> Recalcular Todos los Suelos</button>
+            </div>
+        </div>
+    </div>
 <!-- ===== PAGE: GRUPOS EMAIL ===== -->
 <div id="page-gruposEmail" class="page">
     <div class="flex justify-between items-center mb-16">
@@ -1212,10 +1225,10 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <h3 style="margin-bottom:16px;color:var(--primary);">Datos Económicos</h3>
             <div class="form-grid">
                 <div class="form-group"><label>Precio solicitado del suelo (€)</label><input type="number" id="ns_precio_suelo" placeholder="Ej: 3000000"></div>
-                <div class="form-group"><label>Inversión total estimada (€)</label><input type="number" id="ns_inversion" placeholder="Ej: 15000000"></div>
+                <div class="form-group"><label>Inversión estimada (€) <span class="hint">(auto)</span></label><input type="number" id="ns_inversion" placeholder="Auto" readonly style="background:#f8fafc;"></div>
                 <div class="form-group"><label>€/m²t <span class="hint">(se calcula automáticamente)</span></label><input type="number" step="any" id="ns_precio_m2t" placeholder="Auto" readonly style="background:#f8fafc;"></div>
-                <div class="form-group"><label>Ratio suelo/ventas (%)</label><input type="number" step="any" id="ns_ratio" placeholder="Ej: 18"></div>
-                <div class="form-group"><label>Rentabilidad estimada (%)</label><input type="number" step="any" id="ns_rentabilidad" placeholder="Ej: 15"></div>
+                <div class="form-group"><label>Ratio suelo/ventas (%) <span class="hint">(auto)</span></label><input type="number" step="any" id="ns_ratio" placeholder="Auto" readonly style="background:#f8fafc;"></div>
+                <div class="form-group"><label>Rentabilidad estimada (%) <span class="hint">(auto)</span></label><input type="number" step="any" id="ns_rentabilidad" placeholder="Auto" readonly style="background:#f8fafc;"></div>
             </div>
             <div class="form-group mt-16"><label>Observaciones</label><textarea id="ns_observaciones" placeholder="Notas iniciales sobre la oportunidad..."></textarea></div>
         </div>
@@ -1859,7 +1872,7 @@ function navigateTo(page) {
     if (page === 'fase0') renderFase('0');
     if (page === 'fase1') renderFase('1');
     if (page === 'seguimiento') renderSeguimiento();
-    if (page === 'plantilla') renderPlantilla();
+    if (page === 'plantilla') { renderPlantilla(); renderParamsEcon(); }
     if (page === 'gruposEmail') renderGruposEmail();
     if (page === 'basedatos') renderBaseDatos();
 }
@@ -1868,61 +1881,112 @@ function navigateTo(page) {
 // SCORING ENGINE
 // ============================================================
 function calculateScore(suelo) {
-    const c = DB.scoring.criterios;
-    const negocio = suelo.negocio || 'Cooperativa';
-    const pesosNeg = DB.scoring.porNegocio && DB.scoring.porNegocio[negocio] ? DB.scoring.porNegocio[negocio] : null;
-    const weights = {};
-    c.forEach(cr => weights[cr.id] = (pesosNeg ? (pesosNeg[cr.id] !== undefined ? pesosNeg[cr.id] : cr.peso) : cr.peso) / 100);
+    ensurePorNegocio();
+    var negocio = suelo.negocio || 'Cooperativa';
+    var pesosNeg = DB.scoring.porNegocio[negocio] || DB.scoring.porNegocio['Cooperativa'] || {};
+    var rangos = DB.scoring.rangos || {};
+    var weights = {};
+    SCORING_CRITERIOS.forEach(function(cr) { weights[cr.id] = (pesosNeg[cr.id] || 0) / 100; });
 
-    let scores = {};
+    var scores = {};
 
-    // Ciudad
-    const tier1 = ['valencia','madrid','barcelona','málaga','malaga','sevilla','bilbao','san sebastián','san sebastian','palma'];
-    const tier2 = ['alicante','zaragoza','murcia','granada','córdoba','cordoba','valladolid','vigo','gijón','gijon','hospitalet'];
-    const ciudad = (suelo.ciudad || '').toLowerCase();
-    if (tier1.some(c => ciudad.includes(c))) scores.ciudad = 100;
-    else if (tier2.some(c => ciudad.includes(c))) scores.ciudad = 70;
+    // 1. Ciudad Estratégica (tiers)
+    var tier1 = ['valencia','madrid','barcelona','málaga','malaga','sevilla','bilbao','san sebastián','san sebastian','palma'];
+    var tier2 = ['alicante','zaragoza','murcia','granada','córdoba','cordoba','valladolid','vigo','gijón','gijon','hospitalet','castellón','castellon'];
+    var ciudad = (suelo.ciudad || '').toLowerCase();
+    if (tier1.some(function(c){ return ciudad.includes(c); })) scores.ciudad = 100;
+    else if (tier2.some(function(c){ return ciudad.includes(c); })) scores.ciudad = 70;
     else scores.ciudad = 40;
 
-    // Viviendas
-    const viv = suelo.num_viviendas || 0;
-    if (viv >= 80 && viv <= 200) scores.viviendas = 100;
-    else if (viv >= 50 && viv <= 300) scores.viviendas = 75;
-    else if (viv >= 30 && viv <= 500) scores.viviendas = 50;
-    else scores.viviendas = 25;
+    // 2. Nº Viviendas (rango configurable)
+    var rv = rangos.viviendas || {optMin:80,optMax:200,extMin:30,extMax:400};
+    var viv = suelo.num_viviendas || 0;
+    scores.viviendas = scoreRango(viv, rv);
 
-    // Tipología
-    const tipoMap = {'vpp plurifamiliar':100,'vpp unifamiliar':80,'libre plurifamiliar':90,'libre unifamiliar':70,'mixto plurifamiliar':85,'mixto unifamiliar':65,'terciario - hotel':75,'terciario - otro':60,'hotel-uni.-pluri.':80};
-    scores.tipologia = tipoMap[(suelo.tipologia || '').toLowerCase()] || 50;
+    // 3. €/m²t vs Mercado (automático — compara con media ciudad)
+    scores.precio_m2t_mercado = scorePrecioM2tVsMercado(suelo);
 
-    // Rentabilidad
-    const rent = suelo.rentabilidad_estimada || 0;
-    if (rent >= 15) scores.rentabilidad = 100;
-    else if (rent >= 12) scores.rentabilidad = 80;
-    else if (rent >= 8) scores.rentabilidad = 50;
-    else scores.rentabilidad = 20;
+    // 4. Superficie Edificable (rango configurable)
+    var rs = rangos.superficie || {optMin:4000,optMax:15000,extMin:2000,extMax:30000};
+    scores.superficie = scoreRango(suelo.superficie_edificable || 0, rs);
 
-    // Ratio suelo/ventas
-    const ratio = suelo.ratio_suelo_ventas || 25;
-    if (ratio <= 15) scores.ratio = 100;
-    else if (ratio <= 20) scores.ratio = 75;
-    else if (ratio <= 25) scores.ratio = 50;
-    else scores.ratio = 20;
+    // 5. Rentabilidad (rango configurable)
+    var rr = rangos.rentabilidad || {optMin:12,optMax:25,extMin:8,extMax:35};
+    scores.rentabilidad = scoreRango(suelo.rentabilidad_estimada || 0, rr);
 
-    // Inversión
-    const inv = (suelo.inversion_estimada || 0) / 1000000;
-    if (inv >= 5 && inv <= 20) scores.inversion = 100;
-    else if (inv >= 3 && inv <= 30) scores.inversion = 70;
-    else scores.inversion = 40;
+    // 6. Ratio Suelo/Ventas (rango invertido — menor es mejor)
+    var rra = rangos.ratio || {optMin:5,optMax:15,extMin:3,extMax:25};
+    var ratioVal = suelo.ratio_suelo_ventas;
+    if (ratioVal === undefined || ratioVal === null || ratioVal === 0) ratioVal = 25;
+    scores.ratio = scoreRangoInv(ratioVal, rra);
 
-    // Riesgo
-    const riesgoMap = {'bajo':100,'medio':65,'alto':30,'muy_alto':0};
-    scores.riesgo = riesgoMap[suelo.riesgo_urbanistico] ?? 50;
+    // 7. Precio Suelo (rango configurable)
+    var ri = rangos.inversion || {optMin:1500000,optMax:8000000,extMin:500000,extMax:20000000};
+    scores.inversion = scoreRango(suelo.precio_suelo || 0, ri);
 
-    let total = 0;
-    Object.keys(weights).forEach(k => { total += (scores[k] || 0) * (weights[k] || 0); });
+    // 8. Riesgo Urbanístico (automático)
+    var riesgoMap = {'bajo':100,'medio':65,'alto':30,'muy_alto':0};
+    scores.riesgo = riesgoMap[suelo.riesgo_urbanistico] !== undefined ? riesgoMap[suelo.riesgo_urbanistico] : 50;
+
+    var total = 0;
+    SCORING_CRITERIOS.forEach(function(cr) { total += (scores[cr.id] || 0) * (weights[cr.id] || 0); });
 
     return { total: Math.round(total), desglose: scores };
+}
+
+// Score un valor dentro de un rango configurable (mayor dentro del óptimo = 100)
+function scoreRango(val, r) {
+    if (!val || val === 0) return 10;
+    if (val >= r.optMin && val <= r.optMax) return 100;
+    if (val >= r.extMin && val < r.optMin) return 50 + 50 * ((val - r.extMin) / (r.optMin - r.extMin));
+    if (val > r.optMax && val <= r.extMax) return 50 + 50 * ((r.extMax - val) / (r.extMax - r.optMax));
+    return 10;
+}
+
+// Score invertido (menor valor = mejor, para ratio s/v)
+function scoreRangoInv(val, r) {
+    if (val <= r.optMin) return 100;
+    if (val <= r.optMax) return 70 + 30 * ((r.optMax - val) / (r.optMax - r.optMin));
+    if (val <= r.extMax) return 20 + 50 * ((r.extMax - val) / (r.extMax - r.optMax));
+    return 10;
+}
+
+// €/m²t vs media de la misma ciudad
+var _cityM2tCache = null;
+function getCityM2tAverages() {
+    if (_cityM2tCache) return _cityM2tCache;
+    var cityMap = {};
+    DB.suelos.forEach(function(s) {
+        var c = (s.ciudad || '').toLowerCase().trim();
+        var v = parseFloat(s.precio_m2t) || 0;
+        if (c && v > 0) {
+            if (!cityMap[c]) cityMap[c] = [];
+            cityMap[c].push(v);
+        }
+    });
+    var avgs = {};
+    Object.keys(cityMap).forEach(function(c) {
+        var arr = cityMap[c];
+        avgs[c] = arr.reduce(function(s,v){return s+v;},0) / arr.length;
+    });
+    _cityM2tCache = avgs;
+    return avgs;
+}
+
+function scorePrecioM2tVsMercado(suelo) {
+    var val = parseFloat(suelo.precio_m2t) || 0;
+    if (!val) return 50; // sin dato = neutro
+    var avgs = getCityM2tAverages();
+    var city = (suelo.ciudad || '').toLowerCase().trim();
+    var avg = avgs[city];
+    if (!avg) return 50; // sin comparación posible
+    var ratio = val / avg;
+    if (ratio <= 0.8) return 100;  // muy por debajo de media
+    if (ratio <= 1.0) return 85;   // por debajo o igual a media
+    if (ratio <= 1.3) return 65;   // ligeramente por encima
+    if (ratio <= 1.5) return 40;   // moderadamente por encima
+    if (ratio <= 2.0) return 20;   // caro vs mercado
+    return 10;                      // muy caro
 }
 
 function getScoreClass(score) {
@@ -1933,6 +1997,7 @@ function getScoreClass(score) {
 }
 
 function recalcAllScores() {
+    _cityM2tCache = null; // invalidar cache de medias por ciudad
     DB.suelos.forEach(s => {
         if (!s.score_manual) {
             const sc = calculateScore(s);
@@ -2080,10 +2145,10 @@ function saveSuelo() {
         uso_suelo: document.getElementById('ns_uso').value,
         riesgo_urbanistico: document.getElementById('ns_riesgo').value,
         precio_suelo: parseFloat(document.getElementById('ns_precio_suelo').value) || null,
-        inversion_estimada: parseFloat(document.getElementById('ns_inversion').value) || null,
-        precio_m2t: parseFloat(document.getElementById('ns_precio_m2t').value) || null,
-        ratio_suelo_ventas: parseFloat(document.getElementById('ns_ratio').value) || null,
-        rentabilidad_estimada: parseFloat(document.getElementById('ns_rentabilidad').value) || null,
+        inversion_estimada: null,
+        precio_m2t: null,
+        ratio_suelo_ventas: null,
+        rentabilidad_estimada: null,
         observaciones: document.getElementById('ns_observaciones').value,
         pipeline_estado: 'Captada',
         contacto_id,
@@ -2093,6 +2158,13 @@ function saveSuelo() {
         fecha_ultimo_cambio: new Date().toISOString(),
         created_at: new Date().toISOString()
     };
+
+    // Auto-calcular campos económicos
+    var econCalc = autoCalcEconomicos(suelo);
+    if (econCalc.precio_m2t) suelo.precio_m2t = econCalc.precio_m2t;
+    if (econCalc.inversion_estimada) suelo.inversion_estimada = econCalc.inversion_estimada;
+    if (econCalc.ratio_suelo_ventas !== undefined) suelo.ratio_suelo_ventas = econCalc.ratio_suelo_ventas;
+    if (econCalc.rentabilidad_estimada !== undefined) suelo.rentabilidad_estimada = econCalc.rentabilidad_estimada;
 
     const sc = calculateScore(suelo);
     suelo.score_total = sc.total;
@@ -2107,11 +2179,24 @@ function saveSuelo() {
 }
 
 // Auto-calc €/m²t on economic step
-document.getElementById('ns_precio_suelo')?.addEventListener('input', () => {
-    const edif = parseFloat(document.getElementById('ns_sup_edificable').value);
-    const precio = parseFloat(document.getElementById('ns_precio_suelo').value);
-    if (edif && precio) document.getElementById('ns_precio_m2t').value = Math.round(precio / edif);
+// Auto-calc all economic fields when key inputs change
+function autoCalcFormEconomics() {
+    var supEdif = parseFloat(document.getElementById('ns_sup_edificable').value) || 0;
+    var precioSuelo = parseFloat(document.getElementById('ns_precio_suelo').value) || 0;
+    var tipologia = document.getElementById('ns_tipologia').value;
+    if (!supEdif || !precioSuelo) return;
+
+    var fakeSuelo = { superficie_edificable: supEdif, precio_suelo: precioSuelo, tipologia: tipologia };
+    var calc = autoCalcEconomicos(fakeSuelo);
+    if (calc.precio_m2t) document.getElementById('ns_precio_m2t').value = calc.precio_m2t;
+    if (calc.inversion_estimada) document.getElementById('ns_inversion').value = Math.round(calc.inversion_estimada);
+    if (calc.ratio_suelo_ventas !== undefined) document.getElementById('ns_ratio').value = calc.ratio_suelo_ventas;
+    if (calc.rentabilidad_estimada !== undefined) document.getElementById('ns_rentabilidad').value = calc.rentabilidad_estimada;
+}
+['ns_precio_suelo','ns_sup_edificable'].forEach(function(id) {
+    document.getElementById(id)?.addEventListener('input', autoCalcFormEconomics);
 });
+document.getElementById('ns_tipologia')?.addEventListener('change', autoCalcFormEconomics);
 
 // ============================================================
 // CONTACTOS
@@ -2960,52 +3045,98 @@ function renderPipelineTable() {
 var _scoringActiveNeg = 'Cooperativa';
 var _previewActiveNeg = 'Todos';
 var NEGOCIO_TYPES = ['Cooperativa','Venta libre','Hotel','Otros'];
-var CRITERIO_DEFAULTS = [
-    { id: 'ciudad', nombre: 'Ciudad Estratégica', descripcion: 'Valencia, Madrid, Barcelona, Málaga = máx' },
-    { id: 'viviendas', nombre: 'Nº Viviendas', descripcion: 'Rango óptimo 80-200' },
-    { id: 'tipologia', nombre: 'Tipología', descripcion: 'Cooperativa plurifamiliar = máx' },
-    { id: 'rentabilidad', nombre: 'Rentabilidad Estimada', descripcion: 'TIR >15% = máx' },
-    { id: 'ratio', nombre: 'Ratio Suelo/Ventas', descripcion: '<15% = máx' },
-    { id: 'inversion', nombre: 'Inversión Total', descripcion: 'Rango óptimo 5-20M€' },
-    { id: 'riesgo', nombre: 'Riesgo Urbanístico', descripcion: 'Bajo = máx' },
+
+// Criterios de scoring — cada uno tiene tipo para saber cómo renderizar rangos
+var SCORING_CRITERIOS = [
+    { id: 'ciudad', nombre: 'Ciudad Estratégica', tipo: 'tiers', descripcion: 'Tier 1 / Tier 2 / Resto' },
+    { id: 'viviendas', nombre: 'Nº Viviendas', tipo: 'rango', campo: 'num_viviendas', descripcion: 'Rango óptimo configurable',
+      rangoDefault: {optMin:80, optMax:200, extMin:30, extMax:400} },
+    { id: 'precio_m2t_mercado', nombre: '€/m²t vs Mercado', tipo: 'auto', descripcion: 'Compara con media ciudad (automático)' },
+    { id: 'superficie', nombre: 'Superficie Edificable', tipo: 'rango', campo: 'superficie_edificable', descripcion: 'Rango óptimo configurable',
+      rangoDefault: {optMin:4000, optMax:15000, extMin:2000, extMax:30000} },
+    { id: 'rentabilidad', nombre: 'Rentabilidad Estimada', tipo: 'rango', campo: 'rentabilidad_estimada', descripcion: 'TIR mín. configurable (%)',
+      rangoDefault: {optMin:12, optMax:25, extMin:8, extMax:35} },
+    { id: 'ratio', nombre: 'Ratio Suelo/Ventas', tipo: 'rango_inv', campo: 'ratio_suelo_ventas', descripcion: 'Menor es mejor (%)',
+      rangoDefault: {optMin:5, optMax:15, extMin:3, extMax:25} },
+    { id: 'inversion', nombre: 'Precio Suelo', tipo: 'rango', campo: 'precio_suelo', descripcion: 'Rango óptimo (€)',
+      rangoDefault: {optMin:1500000, optMax:8000000, extMin:500000, extMax:20000000}, fmt: 'money' },
+    { id: 'riesgo', nombre: 'Riesgo Urbanístico', tipo: 'riesgo', descripcion: 'Bajo = máx (automático)' },
 ];
+
+var DEFAULT_PESOS = {
+    'Cooperativa': {ciudad:20, viviendas:20, precio_m2t_mercado:10, superficie:10, rentabilidad:15, ratio:10, inversion:5, riesgo:10},
+    'Venta libre': {ciudad:20, viviendas:10, precio_m2t_mercado:10, superficie:10, rentabilidad:20, ratio:15, inversion:5, riesgo:10},
+    'Hotel':       {ciudad:25, viviendas:0,  precio_m2t_mercado:10, superficie:15, rentabilidad:20, ratio:10, inversion:10, riesgo:10},
+    'Otros':       {ciudad:20, viviendas:10, precio_m2t_mercado:10, superficie:10, rentabilidad:15, ratio:15, inversion:10, riesgo:10}
+};
 
 function ensurePorNegocio() {
     if (!DB.scoring.porNegocio) DB.scoring.porNegocio = {};
-    var defaults = { 'Cooperativa': {ciudad:20,viviendas:20,tipologia:10,rentabilidad:15,ratio:15,inversion:10,riesgo:10},
-        'Venta libre': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:25,ratio:15,inversion:10,riesgo:10},
-        'Hotel': {ciudad:25,viviendas:0,tipologia:15,rentabilidad:25,ratio:10,inversion:15,riesgo:10},
-        'Otros': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:20,ratio:15,inversion:15,riesgo:10} };
     NEGOCIO_TYPES.forEach(function(n) {
-        if (!DB.scoring.porNegocio[n]) DB.scoring.porNegocio[n] = Object.assign({}, defaults[n]);
+        if (!DB.scoring.porNegocio[n]) DB.scoring.porNegocio[n] = Object.assign({}, DEFAULT_PESOS[n]);
+        // Migrate: remove old tipologia key, add new keys
+        delete DB.scoring.porNegocio[n].tipologia;
+        SCORING_CRITERIOS.forEach(function(cr) {
+            if (DB.scoring.porNegocio[n][cr.id] === undefined) DB.scoring.porNegocio[n][cr.id] = (DEFAULT_PESOS[n][cr.id] || 0);
+        });
     });
+    // Ensure rangos storage
+    if (!DB.scoring.rangos) DB.scoring.rangos = {};
+    SCORING_CRITERIOS.forEach(function(cr) {
+        if (cr.rangoDefault && !DB.scoring.rangos[cr.id]) {
+            DB.scoring.rangos[cr.id] = Object.assign({}, cr.rangoDefault);
+        }
+    });
+}
+
+function fmtRangoVal(val, cr) {
+    if (cr.fmt === 'money') return fmtMoney(val);
+    return val.toLocaleString('es-ES');
 }
 
 function renderScoring() {
     ensurePorNegocio();
-    // Render tabs
+    // Negocio tabs
     var tabsEl = document.getElementById('scoringNegocioTabs');
     tabsEl.innerHTML = NEGOCIO_TYPES.map(function(n) {
         var active = n === _scoringActiveNeg;
-        var total = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
+        var total = SCORING_CRITERIOS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
         var badge = total === 100 ? '<span style="color:#10b981;margin-left:4px;">✓</span>' : '<span style="color:#ef4444;margin-left:4px;">'+total+'%</span>';
         return '<button class="btn" style="border:none;border-bottom:2px solid '+(active?'var(--accent)':'transparent')+';border-radius:0;padding:8px 16px;font-weight:'+(active?'700':'400')+';color:'+(active?'var(--accent)':'var(--text-light)')+';background:none;cursor:pointer;" onclick="switchScoringTab(\''+n+'\')">'+n+badge+'</button>';
     }).join('');
-    // Render sliders for active negocio
+
     var pesos = DB.scoring.porNegocio[_scoringActiveNeg];
     var container = document.getElementById('scoringCriteria');
-    container.innerHTML = CRITERIO_DEFAULTS.map(function(cr) {
+    container.innerHTML = SCORING_CRITERIOS.map(function(cr) {
         var val = pesos[cr.id] || 0;
-        return '<div class="scoring-criterion"><div><div class="criterion-name">'+cr.nombre+'</div><div class="text-light" style="font-size:11px;">'+cr.descripcion+'</div></div><div class="criterion-weight" id="weight-'+cr.id+'">'+val+'%</div><div><input type="range" min="0" max="50" value="'+val+'" oninput="updateWeight(\''+cr.id+'\',this.value)"></div></div>';
+        var html = '<div class="scoring-criterion" style="flex-wrap:wrap;">';
+        // Row 1: name + weight slider
+        html += '<div style="flex:1;min-width:200px;"><div class="criterion-name">'+cr.nombre+'</div><div class="text-light" style="font-size:11px;">'+cr.descripcion+'</div></div>';
+        html += '<div class="criterion-weight" id="weight-'+cr.id+'">'+val+'%</div>';
+        html += '<div style="min-width:140px;"><input type="range" min="0" max="50" value="'+val+'" oninput="updateWeight(\''+cr.id+'\',this.value)"></div>';
+        // Row 2: editable ranges (only for rango / rango_inv types)
+        if (cr.tipo === 'rango' || cr.tipo === 'rango_inv') {
+            var r = DB.scoring.rangos[cr.id] || cr.rangoDefault;
+            var label = cr.tipo === 'rango_inv' ? 'Máx bueno / Máx aceptable' : 'Óptimo mín / Óptimo máx';
+            html += '<div style="width:100%;display:flex;gap:8px;align-items:center;margin-top:6px;padding-left:4px;flex-wrap:wrap;">';
+            html += '<span style="font-size:11px;color:var(--text-light);min-width:60px;">Rangos:</span>';
+            html += '<label style="font-size:11px;">Ópt.mín <input type="number" style="width:90px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;" value="'+r.optMin+'" onchange="updateRango(\''+cr.id+'\',\'optMin\',this.value)"></label>';
+            html += '<label style="font-size:11px;">Ópt.máx <input type="number" style="width:90px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;" value="'+r.optMax+'" onchange="updateRango(\''+cr.id+'\',\'optMax\',this.value)"></label>';
+            html += '<label style="font-size:11px;">Ext.mín <input type="number" style="width:90px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;" value="'+r.extMin+'" onchange="updateRango(\''+cr.id+'\',\'extMin\',this.value)"></label>';
+            html += '<label style="font-size:11px;">Ext.máx <input type="number" style="width:90px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-size:11px;" value="'+r.extMax+'" onchange="updateRango(\''+cr.id+'\',\'extMax\',this.value)"></label>';
+            html += '</div>';
+        }
+        if (cr.tipo === 'auto') {
+            html += '<div style="width:100%;margin-top:4px;padding-left:4px;font-size:11px;color:var(--text-light);"><i class="fas fa-info-circle"></i> Calcula automáticamente: si €/m²t < media ciudad → 100, entre media y 1.5x → 70, entre 1.5x y 2x → 40, >2x → 10</div>';
+        }
+        html += '</div>';
+        return html;
     }).join('');
     updateScoringTotal();
     renderScoringPreview();
 }
 
-function switchScoringTab(neg) {
-    _scoringActiveNeg = neg;
-    renderScoring();
-}
+function switchScoringTab(neg) { _scoringActiveNeg = neg; renderScoring(); }
 
 function updateWeight(id, val) {
     ensurePorNegocio();
@@ -3014,10 +3145,15 @@ function updateWeight(id, val) {
     updateScoringTotal();
 }
 
+function updateRango(criterioId, key, val) {
+    ensurePorNegocio();
+    DB.scoring.rangos[criterioId][key] = parseFloat(val);
+}
+
 function updateScoringTotal() {
     ensurePorNegocio();
     var pesos = DB.scoring.porNegocio[_scoringActiveNeg];
-    var total = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (pesos[c.id]||0); },0);
+    var total = SCORING_CRITERIOS.reduce(function(s,c){ return s + (pesos[c.id]||0); },0);
     var el = document.getElementById('scoringTotal');
     el.textContent = _scoringActiveNeg + ' — Total: ' + total + '%';
     el.className = 'scoring-total ' + (total === 100 ? 'valid' : 'invalid');
@@ -3027,12 +3163,10 @@ function applyScoring() {
     ensurePorNegocio();
     var allOk = true;
     NEGOCIO_TYPES.forEach(function(n) {
-        var t = CRITERIO_DEFAULTS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
+        var t = SCORING_CRITERIOS.reduce(function(s,c){ return s + (DB.scoring.porNegocio[n][c.id]||0); },0);
         if (t !== 100) { allOk = false; alert(n + ': los pesos suman ' + t + '%, deben sumar 100%'); }
     });
     if (!allOk) return;
-    // Sync porNegocio to criterios (use Cooperativa as default/base)
-    DB.scoring.criterios.forEach(function(cr) { cr.peso = DB.scoring.porNegocio['Cooperativa'][cr.id] || cr.peso; });
     saveDB('scoring');
     recalcAllScores();
     renderScoring();
@@ -3040,26 +3174,15 @@ function applyScoring() {
 }
 
 function resetScoring() {
-    DB.scoring.porNegocio = {
-        'Cooperativa': {ciudad:20,viviendas:20,tipologia:10,rentabilidad:15,ratio:15,inversion:10,riesgo:10},
-        'Venta libre': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:25,ratio:15,inversion:10,riesgo:10},
-        'Hotel': {ciudad:25,viviendas:0,tipologia:15,rentabilidad:25,ratio:10,inversion:15,riesgo:10},
-        'Otros': {ciudad:20,viviendas:10,tipologia:10,rentabilidad:20,ratio:15,inversion:15,riesgo:10}
-    };
-    DB.scoring.criterios = [
-        { id: 'ciudad', nombre: 'Ciudad Estratégica', peso: 20, descripcion: 'Valencia, Madrid, Barcelona, Málaga = máx' },
-        { id: 'viviendas', nombre: 'Nº Viviendas', peso: 15, descripcion: 'Rango óptimo 80-200' },
-        { id: 'tipologia', nombre: 'Tipología', peso: 10, descripcion: 'Cooperativa plurifamiliar = máx' },
-        { id: 'rentabilidad', nombre: 'Rentabilidad Estimada', peso: 20, descripcion: 'TIR >15% = máx' },
-        { id: 'ratio', nombre: 'Ratio Suelo/Ventas', peso: 15, descripcion: '<15% = máx' },
-        { id: 'inversion', nombre: 'Inversión Total', peso: 10, descripcion: 'Rango óptimo 5-20M€' },
-        { id: 'riesgo', nombre: 'Riesgo Urbanístico', peso: 10, descripcion: 'Bajo = máx' },
-    ];
+    DB.scoring.porNegocio = JSON.parse(JSON.stringify(DEFAULT_PESOS));
+    DB.scoring.rangos = {};
+    SCORING_CRITERIOS.forEach(function(cr) {
+        if (cr.rangoDefault) DB.scoring.rangos[cr.id] = Object.assign({}, cr.rangoDefault);
+    });
     renderScoring();
 }
 
 function renderScoringPreview() {
-    // Preview tabs
     var tabs = ['Todos'].concat(NEGOCIO_TYPES);
     var tabsEl = document.getElementById('scoringPreviewTabs');
     if (tabsEl) {
@@ -3071,18 +3194,17 @@ function renderScoringPreview() {
     var filtered = _previewActiveNeg === 'Todos' ? DB.suelos : DB.suelos.filter(function(s){ return (s.negocio||'Cooperativa') === _previewActiveNeg; });
     var preview = filtered.sort(function(a,b){ return b.score_total - a.score_total; }).slice(0, 10);
     document.getElementById('scoringPreview').innerHTML = preview.length ?
-        '<table class="data-table"><thead><tr><th>Pos</th><th>Nombre</th><th>Ciudad</th><th>Negocio</th><th>Score</th><th>Categoría</th></tr></thead><tbody>' +
+        '<table class="data-table"><thead><tr><th>Pos</th><th>Nombre</th><th>Ciudad</th><th>Negocio</th><th>Score</th><th>Desglose</th></tr></thead><tbody>' +
         preview.map(function(s, i) {
             var sc = getScoreClass(s.score_total);
-            return '<tr><td>'+(i+1)+'</td><td style="font-weight:600;">'+s.nombre+'</td><td>'+s.ciudad+'</td><td>'+(s.negocio||'Cooperativa')+'</td><td><strong>'+s.score_total+'</strong></td><td><span class="score-dot '+sc.class+'"></span>'+sc.label+'</td></tr>';
+            var desg = s.score_desglose || {};
+            var miniBar = SCORING_CRITERIOS.map(function(cr){ var v=desg[cr.id]||0; return '<span title="'+cr.nombre+': '+v+'" style="display:inline-block;width:14px;height:10px;border-radius:2px;background:'+(v>=80?'#10b981':v>=50?'#f59e0b':'#ef4444')+';margin-right:1px;"></span>'; }).join('');
+            return '<tr><td>'+(i+1)+'</td><td style="font-weight:600;">'+s.nombre+'</td><td>'+s.ciudad+'</td><td style="font-size:11px;">'+(s.negocio||'Cooperativa')+'</td><td><strong>'+s.score_total+'</strong> <span class="score-dot '+sc.class+'"></span></td><td>'+miniBar+'</td></tr>';
         }).join('') + '</tbody></table>'
         : '<p class="text-light text-center" style="padding:20px;">No hay oportunidades de este tipo.</p>';
 }
 
-function switchPreviewTab(neg) {
-    _previewActiveNeg = neg;
-    renderScoringPreview();
-}
+function switchPreviewTab(neg) { _previewActiveNeg = neg; renderScoringPreview(); }
 
 // ============================================================
 // ALERTAS
@@ -4070,6 +4192,62 @@ const DEFAULT_PLANTILLA = [
 
 let plantillaConfig = null;
 
+
+// PARAMS ECONÓMICOS UI
+function renderParamsEcon() {
+    var params = getParamsEconomicos();
+    var container = document.getElementById('paramsEconContainer');
+    if (!container) return;
+    var tipos = Object.keys(PARAMS_ECONOMICOS_DEFAULT);
+    container.innerHTML = '<table class="data-table" style="font-size:12px;"><thead><tr><th>Tipología</th><th>Coste Construcción (€/m²t)</th><th>Precio Venta (€/m²t)</th><th>Otros Costes (%)</th></tr></thead><tbody>' +
+        tipos.map(function(t) {
+            var p = params[t] || PARAMS_ECONOMICOS_DEFAULT[t];
+            return '<tr><td style="font-weight:600;">'+t+'</td>' +
+                '<td><input type="number" class="pe-input" data-tipo="'+t+'" data-field="coste_m2" value="'+p.coste_m2+'" style="width:80px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;text-align:right;"></td>' +
+                '<td><input type="number" class="pe-input" data-tipo="'+t+'" data-field="pvp_m2" value="'+p.pvp_m2+'" style="width:80px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;text-align:right;"></td>' +
+                '<td><input type="number" class="pe-input" data-tipo="'+t+'" data-field="otros_pct" value="'+p.otros_pct+'" style="width:60px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;text-align:right;"></td></tr>';
+        }).join('') + '</tbody></table>';
+}
+
+function saveParamsEcon() {
+    var inputs = document.querySelectorAll('.pe-input');
+    var params = JSON.parse(JSON.stringify(PARAMS_ECONOMICOS_DEFAULT));
+    inputs.forEach(function(inp) {
+        var tipo = inp.dataset.tipo;
+        var field = inp.dataset.field;
+        if (params[tipo]) params[tipo][field] = parseFloat(inp.value) || 0;
+    });
+    DB.params_economicos = params;
+    saveDB('params_economicos');
+    alert('Parámetros económicos guardados');
+}
+
+function resetParamsEcon() {
+    DB.params_economicos = JSON.parse(JSON.stringify(PARAMS_ECONOMICOS_DEFAULT));
+    saveDB('params_economicos');
+    renderParamsEcon();
+    alert('Parámetros restaurados a valores por defecto');
+}
+
+function recalcAllEconomics() {
+    var count = 0;
+    DB.suelos.forEach(function(s) {
+        if (s.superficie_edificable && s.precio_suelo) {
+            var calc = autoCalcEconomicos(s);
+            if (calc.precio_m2t) s.precio_m2t = calc.precio_m2t;
+            if (calc.inversion_estimada) s.inversion_estimada = calc.inversion_estimada;
+            if (calc.ratio_suelo_ventas !== undefined) s.ratio_suelo_ventas = calc.ratio_suelo_ventas;
+            if (calc.rentabilidad_estimada !== undefined) s.rentabilidad_estimada = calc.rentabilidad_estimada;
+            count++;
+        }
+    });
+    _cityM2tCache = null;
+    recalcAllScores();
+    saveDB('suelos');
+    alert('Recalculados ' + count + ' suelos con nuevos parámetros económicos');
+    renderParamsEcon();
+}
+
 function getPlantilla() {
     if (!plantillaConfig) {
         try {
@@ -4242,6 +4420,63 @@ function fmtPV(pv) {
 // AUTO-CALC VIVIENDAS (m²t / ratio configurable)
 // ============================================================
 const M2_POR_VIVIENDA_DEFAULT = 100; // m²t medio por vivienda (configurable)
+// Parámetros económicos por tipología (editables en Configuración > Parámetros)
+// coste_m2: coste construcción €/m²t, pvp_m2: precio venta €/m²t, otros_pct: % otros costes sobre construcción
+const PARAMS_ECONOMICOS_DEFAULT = {
+    'VPP Plurifamiliar':      { coste_m2: 1200, pvp_m2: 2200, otros_pct: 18 },
+    'VPP Unifamiliar':        { coste_m2: 1350, pvp_m2: 2400, otros_pct: 18 },
+    'Libre Plurifamiliar':    { coste_m2: 1400, pvp_m2: 2800, otros_pct: 20 },
+    'Libre Unifamiliar':      { coste_m2: 1500, pvp_m2: 3200, otros_pct: 20 },
+    'Terciario - Hotel':      { coste_m2: 1600, pvp_m2: 3500, otros_pct: 22 },
+    'Terciario - Otro':       { coste_m2: 1300, pvp_m2: 2600, otros_pct: 20 },
+    'Mixto Plurifamiliar':    { coste_m2: 1350, pvp_m2: 2600, otros_pct: 20 },
+    'Mixto Unifamiliar':      { coste_m2: 1450, pvp_m2: 3000, otros_pct: 20 },
+    'Hotel-Uni.-Pluri.':      { coste_m2: 1400, pvp_m2: 2800, otros_pct: 20 },
+};
+
+function getParamsEconomicos() {
+    if (DB.params_economicos && Object.keys(DB.params_economicos).length > 0) return DB.params_economicos;
+    return PARAMS_ECONOMICOS_DEFAULT;
+}
+
+// Auto-cálculo de campos económicos derivados
+function autoCalcEconomicos(suelo) {
+    var params = getParamsEconomicos();
+    var tip = suelo.tipologia || 'Libre Plurifamiliar';
+    var p = params[tip] || params['Libre Plurifamiliar'] || { coste_m2: 1400, pvp_m2: 2800, otros_pct: 20 };
+    var supEdif = parseFloat(suelo.superficie_edificable) || 0;
+    var precioSuelo = parseFloat(suelo.precio_suelo) || 0;
+
+    var result = {};
+
+    // €/m²t = precio suelo / superficie edificable
+    if (supEdif > 0 && precioSuelo > 0) {
+        result.precio_m2t = Math.round(precioSuelo / supEdif);
+    }
+
+    // Inversión estimada = precio_suelo + (coste_m2 * sup_edificable) * (1 + otros_pct/100)
+    if (supEdif > 0 && precioSuelo > 0) {
+        var costeConstruccion = p.coste_m2 * supEdif;
+        var otrosCostes = costeConstruccion * (p.otros_pct / 100);
+        result.inversion_estimada = Math.round(precioSuelo + costeConstruccion + otrosCostes);
+    }
+
+    // Ratio suelo/ventas = precio_suelo / (pvp_m2 * sup_edificable) * 100
+    if (supEdif > 0 && precioSuelo > 0 && p.pvp_m2 > 0) {
+        var ingresosBrutos = p.pvp_m2 * supEdif;
+        result.ratio_suelo_ventas = Math.round((precioSuelo / ingresosBrutos) * 1000) / 10;
+    }
+
+    // Rentabilidad = (ingresos - inversión) / inversión * 100
+    if (result.inversion_estimada && supEdif > 0 && p.pvp_m2 > 0) {
+        var ingresos = p.pvp_m2 * supEdif;
+        var margen = ingresos - result.inversion_estimada;
+        result.rentabilidad_estimada = Math.round((margen / result.inversion_estimada) * 1000) / 10;
+    }
+
+    return result;
+}
+
 
 function autoCalcViviendas(supEdificable, tipologia) {
     if (!supEdificable) return null;
