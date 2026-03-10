@@ -179,6 +179,62 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f2f
 .timeline-tipo{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:var(--border);}
 .timeline-text{font-size:13px;line-height:1.5;}
 
+
+/* ============ FUNNEL ============ */
+.funnel-container{margin:24px 0;padding:20px;background:var(--card);border-radius:12px;border:1px solid var(--border);}
+.funnel-title{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--text);}
+.funnel-bar{display:flex;align-items:center;margin-bottom:6px;gap:12px;}
+.funnel-label{min-width:200px;font-size:12px;font-weight:600;text-align:right;white-space:nowrap;}
+.funnel-track{flex:1;height:36px;border-radius:6px;position:relative;overflow:hidden;background:#f1f5f9;}
+.funnel-fill{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:40px;transition:width .5s ease;}
+.funnel-conv{min-width:80px;font-size:11px;color:var(--text-light);text-align:left;}
+.funnel-negocio-table{width:100%;margin-top:16px;border-collapse:collapse;font-size:12px;}
+.funnel-negocio-table th{text-align:left;padding:6px 10px;border-bottom:2px solid var(--border);color:var(--text-light);font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+.funnel-negocio-table td{padding:6px 10px;border-bottom:1px solid #f1f5f9;}
+
+/* ============ SAVED FILTERS ============ */
+.saved-filters-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.saved-filter-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;font-size:11px;font-weight:600;background:#f1f5f9;border:1px solid var(--border);cursor:pointer;transition:all .2s;}
+.saved-filter-chip:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.saved-filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.saved-filter-chip .sf-del{margin-left:4px;opacity:.5;font-size:10px;}
+.saved-filter-chip .sf-del:hover{opacity:1;}
+
+/* ============ KANBAN DRAG & DROP ============ */
+.kanban-card[draggable="true"]{cursor:grab;}
+.kanban-card[draggable="true"]:active{cursor:grabbing;}
+.kanban-card.dragging{opacity:0.4;transform:scale(0.95);}
+.kanban-column.drag-over .kanban-cards{background:var(--accent);background:rgba(59,130,246,.08);border:2px dashed var(--accent);border-radius:6px;min-height:60px;}
+
+/* ============ ENHANCED TIMELINE ============ */
+.enhanced-timeline{position:relative;padding-left:32px;}
+.enhanced-timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--accent),var(--border));}
+.etl-item{position:relative;margin-bottom:20px;padding:14px 18px;background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.etl-item::before{
+    content:'';position:absolute;left:-24px;top:18px;width:12px;height:12px;
+    border-radius:50%;border:2px solid var(--accent);background:#fff;z-index:1;
+}
+.etl-item.etl-fase::before{background:var(--accent);border-color:var(--accent);}
+.etl-item.etl-reunion::before{background:var(--accent);border-color:var(--accent);}
+.etl-item.etl-llamada::before{background:var(--success);border-color:var(--success);}
+.etl-item.etl-email::before{background:var(--warning);border-color:var(--warning);}
+.etl-item.etl-visita::before{background:#8b5cf6;border-color:#8b5cf6;}
+.etl-item.etl-nota::before{background:var(--text-light);border-color:var(--text-light);}
+.etl-date{font-size:10px;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.etl-badge{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:8px;}
+.etl-desc{font-size:13px;margin-top:6px;line-height:1.5;color:var(--text);}
+.etl-duration{font-size:10px;color:var(--gold);font-weight:600;margin-top:4px;display:flex;align-items:center;gap:4px;}
+
+/* ============ COMPARATIVA ============ */
+.compare-bar{display:none;align-items:center;gap:8px;padding:8px 16px;background:var(--accent);color:#fff;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;}
+.compare-bar.visible{display:flex;}
+.compare-table{width:100%;border-collapse:collapse;}
+.compare-table th{text-align:left;padding:10px 14px;background:#f8fafc;font-size:11px;text-transform:uppercase;color:var(--text-light);font-weight:700;border-bottom:2px solid var(--border);width:160px;}
+.compare-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top;}
+.compare-table td.best{background:#d1fae522;color:var(--success);font-weight:600;}
+.compare-table td.worst{background:#fee2e222;color:var(--danger);}
+.compare-score-bar{height:6px;border-radius:3px;background:#e2e8f0;margin-top:4px;}
+.compare-score-fill{height:100%;border-radius:3px;}
 /* ============ KANBAN ============ */
 .kanban-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;min-height:400px;}
 .kanban-column{min-width:250px;max-width:280px;flex-shrink:0;background:#f8fafc;border-radius:8px;border:1px solid var(--border);}
@@ -646,8 +702,9 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 
 <!-- ===== PAGE: DASHBOARD ===== -->
 <div id="page-dashboard" class="page active">
-    <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:20px;">Dashboard de Expansión</h2>
+    <div style="display:flex;align-items:center;margin-bottom:20px;"><h2 style="font-size:20px;font-weight:700;color:var(--primary);margin:0;">Dashboard de Expansión</h2><button class="btn btn-outline btn-sm" onclick="exportInformeComite()" style="margin-left:auto;font-size:11px;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:4px;"></i> Informe Comité</button></div>
     <div class="kpi-grid" id="dashKPIs"></div>
+    <div id="dashFunnel" class="funnel-container"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="dashCharts">
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pipeline por Estado</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartEstados" style="max-height:180px;"></canvas></div></div>
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Evolución Mensual</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartMensual" style="max-height:180px;"></canvas></div></div>
@@ -732,10 +789,12 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 
     <!-- Table -->
     <div class="card">
-        <div class="table-wrapper" style="max-height:calc(100vh - 320px);">
+        <div id='savedFiltersBar' class='saved-filters-bar'></div>
+                <div id='compareBar' class='compare-bar'></div>
+                <div class="table-wrapper" style="max-height:calc(100vh - 320px);">
             <table class="data-table compact" id="suelosTable">
                 <thead><tr>
-                    <th class="col-sortable" onclick="sortSuelos('nombre')">Nombre <span class="sort-icon" id="sort-nombre"></span></th>
+                    <th style="width:30px;padding:4px;"></th><th class="col-sortable" onclick="sortSuelos('nombre')">Nombre <span class="sort-icon" id="sort-nombre"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('ciudad')">Ciudad <span class="sort-icon" id="sort-ciudad"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('provincia')">Prov. <span class="sort-icon" id="sort-provincia"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('pipeline_estado')">Estado <span class="sort-icon" id="sort-pipeline_estado"></span></th>
@@ -2644,6 +2703,56 @@ function sortSuelos(field) {
 }
 
 // Excel-like filter state
+
+var savedFilters = [];
+function loadSavedFilters() {
+    try { savedFilters = JSON.parse(localStorage.getItem('sfi_saved_filters')) || []; } catch(e) { savedFilters = []; }
+}
+function saveSavedFilters() {
+    localStorage.setItem('sfi_saved_filters', JSON.stringify(savedFilters));
+    if (SB_CONNECTED && SB) upsertConfig('savedFilters', savedFilters);
+}
+function renderSavedFiltersBar() {
+    var bar = document.getElementById('savedFiltersBar');
+    if (!bar) return;
+    loadSavedFilters();
+    var hasActive = Object.values(excelFilters).some(function(arr) { return arr.length > 0; });
+    var html = '';
+    if (hasActive) {
+        html += '<button class="btn btn-accent btn-sm" onclick="promptSaveFilter()" style="font-size:11px;padding:4px 10px;"><i class="fas fa-save"></i> Guardar filtro</button>';
+    }
+    savedFilters.forEach(function(sf, i) {
+        html += '<span class="saved-filter-chip" onclick="applySavedFilter(' + i + ')" title="Aplicar: ' + sf.name + '">' +
+            '<i class="fas fa-bookmark" style="font-size:9px;"></i> ' + sf.name +
+            '<span class="sf-del" onclick="event.stopPropagation();deleteSavedFilter(' + i + ')"><i class="fas fa-times"></i></span></span>';
+    });
+    bar.innerHTML = html;
+}
+function promptSaveFilter() {
+    var name = prompt('Nombre para este filtro:');
+    if (!name || !name.trim()) return;
+    savedFilters.push({ name: name.trim(), filters: JSON.parse(JSON.stringify(excelFilters)) });
+    saveSavedFilters();
+    renderSavedFiltersBar();
+    showToast('Filtro "' + name.trim() + '" guardado', 'success');
+}
+function applySavedFilter(idx) {
+    var sf = savedFilters[idx];
+    if (!sf) return;
+    excelFilters = JSON.parse(JSON.stringify(sf.filters));
+    applyExcelFilters();
+    renderSavedFiltersBar();
+    showToast('Filtro "' + sf.name + '" aplicado', 'info');
+}
+function deleteSavedFilter(idx) {
+    var sf = savedFilters[idx];
+    if (!sf) return;
+    savedFilters.splice(idx, 1);
+    saveSavedFilters();
+    renderSavedFiltersBar();
+    showToast('Filtro eliminado', 'info');
+}
+
 let excelFilters = { estado:[], ciudad:[], provincia:[], tipologia:[], vertical:[], negocio:[], score:[], responsable:[] };
 let suelosViewMode = 'compact';
 
@@ -2866,7 +2975,7 @@ function renderSuelosTable() {
         const estadoColor = PIPELINE_ESTADOS.find(e=>e.id===s.pipeline_estado)?.color||'#94a3b8';
 
         return `<tr>
-            <td><a href="#" onclick="showDetalle('${s.id}');return false;" style="color:var(--primary);font-weight:600;text-decoration:none;" title="${s.nombre}">${s.nombre.length > 30 ? s.nombre.substring(0,28)+'..' : s.nombre}</a></td>
+            <td style="width:30px;text-align:center;padding:4px;"><input type="checkbox" class="row-compare" data-id="${s.id}" onchange="toggleCompareSelect('${s.id}',this.checked)" ${_compareSelection.includes(s.id)?'checked':''}></td><td><a href="#" onclick="showDetalle('${s.id}');return false;" style="color:var(--primary);font-weight:600;text-decoration:none;" title="${s.nombre}">${s.nombre.length > 30 ? s.nombre.substring(0,28)+'..' : s.nombre}</a></td>
             <td>${s.ciudad}</td>
             <td style="font-size:11px;color:var(--text-light);">${s.provincia || '-'}</td>
             <td><span class="badge-estado" style="background:${estadoColor}22;color:${estadoColor};font-size:9px;padding:2px 6px;">${s.pipeline_estado.replace('- Análisis Preliminar','- F0').replace(': Compra del suelo','- F1')}</span></td>
@@ -2991,6 +3100,63 @@ function removeContactoFromSuelo(sueloId, contactoId) {
     saveDB('suelos', s);
     showDetalle(sueloId);
     showToast('Contacto desvinculado', 'info');
+}
+
+
+function buildEnhancedTimeline(suelo, acts) {
+    var events = [];
+    // Add phase changes from fechas_fase
+    if (suelo.fechas_fase) {
+        Object.keys(suelo.fechas_fase).forEach(function(key) {
+            if (key.endsWith('_salida')) return;
+            var fecha = suelo.fechas_fase[key];
+            var salida = suelo.fechas_fase[key + '_salida'];
+            var durDays = null;
+            if (salida) {
+                durDays = Math.round((new Date(salida) - new Date(fecha)) / 86400000);
+            } else if (suelo.pipeline_estado === key) {
+                durDays = Math.round((new Date() - new Date(fecha)) / 86400000);
+            }
+            events.push({
+                date: fecha,
+                type: 'fase',
+                icon: 'fas fa-flag',
+                badge: key.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1'),
+                badgeColor: (PIPELINE_ESTADOS.find(function(e){return e.id===key;})||{}).color || '#94a3b8',
+                desc: 'Entrada en <strong>' + key + '</strong>',
+                duration: durDays !== null ? durDays + ' días en esta fase' : null
+            });
+        });
+    }
+    // Add activities
+    acts.forEach(function(a) {
+        var icons = {reunion:'fas fa-users',llamada:'fas fa-phone',email:'fas fa-envelope',visita:'fas fa-map-marker-alt',nota:'fas fa-sticky-note'};
+        var colors = {reunion:'var(--accent)',llamada:'var(--success)',email:'var(--warning)',visita:'#8b5cf6',nota:'var(--text-light)'};
+        events.push({
+            date: a.fecha,
+            type: a.tipo || 'nota',
+            icon: icons[a.tipo] || 'fas fa-sticky-note',
+            badge: a.tipo || 'nota',
+            badgeColor: colors[a.tipo] || 'var(--text-light)',
+            desc: a.descripcion,
+            duration: null,
+            proximos: a.proximos_pasos || null
+        });
+    });
+    // Sort by date descending
+    events.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    if (!events.length) return '<p class="text-light">No hay actividades ni cambios de fase registrados.</p>';
+    return '<div class="enhanced-timeline">' + events.map(function(ev) {
+        var dateStr = new Date(ev.date).toLocaleDateString('es-ES', {day:'2-digit',month:'short',year:'numeric'});
+        var timeStr = new Date(ev.date).toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        return '<div class="etl-item etl-' + ev.type + '">' +
+            '<div class="etl-date"><i class="' + ev.icon + '" style="margin-right:4px;color:' + ev.badgeColor + ';"></i>' + dateStr + ' ' + timeStr +
+            '<span class="etl-badge" style="background:' + ev.badgeColor + '22;color:' + ev.badgeColor + ';">' + ev.badge + '</span></div>' +
+            '<div class="etl-desc">' + ev.desc + '</div>' +
+            (ev.duration ? '<div class="etl-duration"><i class="fas fa-clock"></i> ' + ev.duration + '</div>' : '') +
+            (ev.proximos ? '<div style="margin-top:6px;font-size:12px;color:var(--accent);"><i class="fas fa-arrow-right"></i> ' + ev.proximos + '</div>' : '') +
+            '</div>';
+    }).join('') + '</div>';
 }
 
 function showDetalle(id) {
@@ -3148,18 +3314,9 @@ function showDetalle(id) {
         </div>
 
         <div class="tab-panel" id="dt-actividad">
-            ${acts.length ? '<div class="timeline">' + acts.map(a => `
-                <div class="timeline-item tipo-${a.tipo}">
-                    <div class="timeline-meta">
-                        <span class="timeline-tipo">${a.tipo}</span>
-                        <span>${fmtDate(a.fecha)}</span>
-                    </div>
-                    <div class="timeline-text">${a.descripcion}</div>
-                    ${a.proximos_pasos ? '<div style="margin-top:6px;font-size:12px;color:var(--accent);"><i class="fas fa-arrow-right"></i> ' + a.proximos_pasos + '</div>' : ''}
-                </div>
-            `).join('') + '</div>' : '<p class="text-light">No hay actividades registradas.</p>'}
-            <button class="btn btn-accent btn-sm mt-16" onclick="closeModal('modalDetalle');showNuevaActividadPara('${s.id}')"><i class="fas fa-plus"></i> Registrar Actividad</button>
-        </div>
+    ${buildEnhancedTimeline(s, acts)}
+    <button class="btn btn-accent btn-sm mt-16" onclick="closeModal('modalDetalle');showNuevaActividadPara('${s.id}')"><i class="fas fa-plus"></i> Registrar Actividad</button>
+</div>
 
         <div class="tab-panel" id="dt-scoring">
             <div style="text-align:center;margin-bottom:16px;">
@@ -3295,6 +3452,141 @@ function renderPipeline() {
 
 var VERTICAL_COLORS = {'Living':'#3b82f6','Investment':'#8b5cf6','Inversión Patrimonial':'#f59e0b','Sin definir':'#94a3b8'};
 
+
+var _kanbanDragId = null;
+function kanbanDragStart(e) {
+    _kanbanDragId = e.target.getAttribute('data-suelo-id') || e.target.closest('.kanban-card').getAttribute('data-suelo-id');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', _kanbanDragId);
+    setTimeout(function() { e.target.classList.add('dragging'); }, 0);
+}
+function kanbanDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.kanban-column.drag-over').forEach(function(col) { col.classList.remove('drag-over'); });
+    _kanbanDragId = null;
+}
+function kanbanDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function kanbanDragEnter(e) {
+    e.preventDefault();
+    var col = e.target.closest('.kanban-column');
+    if (col) col.classList.add('drag-over');
+}
+function kanbanDragLeave(e) {
+    var col = e.target.closest('.kanban-column');
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+}
+function kanbanDrop(e) {
+    e.preventDefault();
+    var col = e.target.closest('.kanban-column');
+    if (!col) return;
+    col.classList.remove('drag-over');
+    var targetEstado = col.getAttribute('data-estado');
+    var sueloId = e.dataTransfer.getData('text/plain') || _kanbanDragId;
+    if (!sueloId || !targetEstado) return;
+    var suelo = DB.suelos.find(function(s) { return s.id === sueloId; });
+    if (!suelo || suelo.pipeline_estado === targetEstado) return;
+    // Confirm terminal states
+    if (targetEstado === 'Descartada' || targetEstado === 'Vendida') {
+        if (!confirm('¿Mover "' + suelo.nombre + '" a ' + targetEstado + '?')) return;
+    }
+    setEstado(suelo, targetEstado);
+    renderKanban();
+    showToast(suelo.nombre + ' → ' + targetEstado, 'success');
+}
+
+var _compareSelection = [];
+function toggleCompareSelect(id, checked) {
+    if (checked && !_compareSelection.includes(id)) {
+        if (_compareSelection.length >= 3) {
+            showToast('Máximo 3 operaciones para comparar', 'warning');
+            var cb = document.querySelector('.row-compare[data-id="'+id+'"]');
+            if (cb) cb.checked = false;
+            return;
+        }
+        _compareSelection.push(id);
+    } else {
+        _compareSelection = _compareSelection.filter(function(x){return x !== id;});
+    }
+    updateCompareBar();
+}
+function updateCompareBar() {
+    var bar = document.getElementById('compareBar');
+    if (!bar) return;
+    if (_compareSelection.length >= 2) {
+        bar.className = 'compare-bar visible';
+        bar.innerHTML = '<i class="fas fa-columns"></i> ' + _compareSelection.length + ' seleccionadas <button class="btn btn-sm" onclick="openComparativa()" style="background:#fff;color:var(--accent);margin-left:auto;font-size:11px;padding:4px 12px;">Comparar</button> <button class="btn btn-sm" onclick="clearCompareSelection()" style="background:transparent;color:#fff;border:1px solid #fff;font-size:11px;padding:4px 8px;">Limpiar</button>';
+    } else {
+        bar.className = 'compare-bar';
+    }
+}
+function clearCompareSelection() {
+    _compareSelection = [];
+    document.querySelectorAll('.row-compare').forEach(function(cb){cb.checked = false;});
+    updateCompareBar();
+}
+function openComparativa() {
+    var suelos = _compareSelection.map(function(id){return DB.suelos.find(function(s){return s.id===id;});}).filter(Boolean);
+    if (suelos.length < 2) return;
+    var fields = [
+        {label:'Ciudad',key:'ciudad'},
+        {label:'Provincia',key:'provincia'},
+        {label:'Negocio',key:'negocio'},
+        {label:'Tipología',key:'tipologia'},
+        {label:'Vertical',key:'vertical'},
+        {label:'Estado',key:'pipeline_estado'},
+        {label:'Viviendas',key:'num_viviendas',numeric:true,higher:true},
+        {label:'Superficie (m²)',key:'superficie_edificable',numeric:true,higher:true,fmt:'num'},
+        {label:'Precio suelo',key:'precio_suelo',numeric:true,higher:false,fmt:'money'},
+        {label:'€/m²t',key:'precio_m2t',numeric:true,higher:false,fmt:'num'},
+        {label:'Ratio suelo/ventas',key:'ratio_suelo_ventas',numeric:true,higher:false,fmt:'pct'},
+        {label:'Inversión estimada',key:'inversion_estimada',numeric:true,higher:true,fmt:'money'},
+        {label:'Margen HHNN',key:'margen_hhnn_pct',numeric:true,higher:true,fmt:'pct'},
+        {label:'Score',key:'score_total',numeric:true,higher:true},
+        {label:'Fecha captación',key:'fecha_captacion'},
+        {label:'Responsable',key:'responsable'},
+        {label:'Observaciones',key:'observaciones'}
+    ];
+    var colW = Math.floor(80 / suelos.length);
+    var tableHtml = '<table class="compare-table"><thead><tr><th style="width:160px;">Campo</th>';
+    suelos.forEach(function(s){
+        var ec = (PIPELINE_ESTADOS.find(function(e){return e.id===s.pipeline_estado;})||{}).color||'#94a3b8';
+        tableHtml += '<th style="width:'+colW+'%;text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--primary);">'+s.nombre+'</div><span class="badge-estado" style="background:'+ec+'22;color:'+ec+';font-size:9px;padding:2px 6px;">'+s.pipeline_estado+'</span></th>';
+    });
+    tableHtml += '</tr></thead><tbody>';
+    fields.forEach(function(f){
+        tableHtml += '<tr><th>'+f.label+'</th>';
+        var vals = suelos.map(function(s){return s[f.key];});
+        var numVals = f.numeric ? vals.map(function(v){return typeof v === 'number' ? v : parseFloat(v)||0;}) : [];
+        var bestIdx = -1, worstIdx = -1;
+        if (f.numeric && numVals.length > 1) {
+            var sorted = numVals.slice().sort(function(a,b){return a-b;});
+            var best = f.higher ? sorted[sorted.length-1] : sorted[0];
+            var worst = f.higher ? sorted[0] : sorted[sorted.length-1];
+            if (best !== worst) {
+                bestIdx = numVals.indexOf(best);
+                worstIdx = numVals.indexOf(worst);
+            }
+        }
+        suelos.forEach(function(s,i){
+            var v = s[f.key];
+            var display = v;
+            if (f.fmt === 'money') display = fmtMoney(v);
+            else if (f.fmt === 'pct') display = v ? v + '%' : '-';
+            else if (f.fmt === 'num') display = v ? Math.round(v).toLocaleString('es-ES') : '-';
+            else if (f.key === 'score_total') display = '<div style="font-weight:700;font-size:16px;">' + (v||0) + '</div><div class="compare-score-bar"><div class="compare-score-fill" style="width:'+(v||0)+'%;background:'+getScoreClass(v||0).color+';"></div></div>';
+            else display = v || '-';
+            var cls = i === bestIdx ? ' class="best"' : i === worstIdx ? ' class="worst"' : '';
+            tableHtml += '<td'+cls+' style="text-align:center;">'+display+'</td>';
+        });
+        tableHtml += '</tr>';
+    });
+    tableHtml += '</tbody></table>';
+    openModal('modalDetalle');
+    document.querySelector('#modalDetalle .modal-content').innerHTML =
+        '<div class="modal-header"><h3><i class="fas fa-columns" style="margin-right:8px;"></i>Comparativa de Operaciones</h3><button class="modal-close" onclick="closeModal(&quot;modalDetalle&quot;)">&times;</button></div>' +
+        '<div style="padding:20px;overflow-x:auto;">' + tableHtml + '</div>';
+}
+
 function renderKanban() {
     const board = document.getElementById('pipelineKanban');
     board.innerHTML = PIPELINE_ESTADOS.map(estado => {
@@ -3315,7 +3607,7 @@ function renderKanban() {
                 ${items.map(s => {
                     const sc = getScoreClass(s.score_total);
                     const negBadge = s.negocio ? '<span style="font-size:9px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:var(--text-light);">'+s.negocio+'</span>' : '';
-                    return `<div class="kanban-card" onclick="showDetalle('${s.id}')" style="border-left:3px solid ${vColor};">
+                    return `<div class="kanban-card" draggable="true" data-suelo-id="${s.id}" data-estado="${estado.id}" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)" onclick="showDetalle('${s.id}')" style="border-left:3px solid ${vColor};">
                         <div class="card-title" style="font-size:12px;">${s.nombre}</div>
                         <div class="card-meta">${s.ciudad} · ${s.num_viviendas || '?'} viv · <span class="score-dot ${sc.class}"></span>${s.score_total} ${negBadge}</div>
                         ${s.precio_suelo ? '<div class="card-meta">'+fmtMoney(s.precio_suelo)+(s.precio_m2t ? ' · '+s.precio_m2t+'€/m²t' : '')+'</div>' : ''}
@@ -3324,7 +3616,7 @@ function renderKanban() {
             </div>`;
         }).join('');
 
-        return `<div class="kanban-column">
+        return `<div class="kanban-column" data-estado="${estado.id}" ondragover="kanbanDragOver(event)" ondragenter="kanbanDragEnter(event)" ondragleave="kanbanDragLeave(event)" ondrop="kanbanDrop(event)">
             <div class="kanban-col-header" style="border-top:3px solid ${estado.color};">
                 <span>${estado.id}</span><span class="count">${ops.length}</span>
             </div>
@@ -3680,6 +3972,86 @@ function markAllAlertsRead() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+
+function renderFunnel() {
+    var funnelStates = ['Captada', 'Fase 0 - Análisis Preliminar', 'Fase 1: Compra del suelo', 'Ganada'];
+    var counts = {};
+    var invs = {};
+    var negocios = {};
+    funnelStates.forEach(function(st) { counts[st] = 0; invs[st] = 0; });
+    DB.suelos.forEach(function(s) {
+        var st = s.pipeline_estado;
+        if (counts[st] !== undefined) {
+            counts[st]++;
+            invs[st] += (s.inversion_estimada || 0);
+        }
+        // Also for Ganada, count Fase 1 and above
+        if (st === 'Ganada' || st === 'Vendida' || st === 'Seguimiento') {
+            if (counts['Ganada'] !== undefined && st !== 'Ganada') { counts['Ganada']++; invs['Ganada'] += (s.inversion_estimada || 0); }
+        }
+        // Negocio breakdown
+        var neg = s.negocio || 'Sin definir';
+        if (!negocios[neg]) negocios[neg] = {};
+        funnelStates.forEach(function(fs) { if (!negocios[neg][fs]) negocios[neg][fs] = 0; });
+        if (counts[st] !== undefined || st === 'Vendida' || st === 'Seguimiento') {
+            var mapped = (st === 'Vendida' || st === 'Seguimiento') ? 'Ganada' : st;
+            if (negocios[neg][mapped] !== undefined) negocios[neg][mapped]++;
+        }
+    });
+    // Add cumulative: count ops that PASSED through each stage
+    var cumCounts = {};
+    funnelStates.forEach(function(st, i) {
+        cumCounts[st] = 0;
+        DB.suelos.forEach(function(s) {
+            var sIdx = funnelStates.indexOf(s.pipeline_estado);
+            // If current estado is at or beyond this stage, or in terminal states
+            if (sIdx >= i || (i <= 3 && (s.pipeline_estado === 'Vendida' || s.pipeline_estado === 'Seguimiento'))) {
+                cumCounts[st]++;
+            }
+            // Descartada: check fechas_fase to see if it passed through
+            if (s.pipeline_estado === 'Descartada' && s.fechas_fase && s.fechas_fase[st]) {
+                cumCounts[st]++;
+            }
+        });
+    });
+    var maxCount = Math.max.apply(null, funnelStates.map(function(st) { return cumCounts[st]; })) || 1;
+    var colors = {};
+    PIPELINE_ESTADOS.forEach(function(e) { colors[e.id] = e.color; });
+    var shortLabels = {'Captada':'Captada','Fase 0 - Análisis Preliminar':'Fase 0','Fase 1: Compra del suelo':'Fase 1','Ganada':'Ganada'};
+
+    var container = document.getElementById('dashFunnel');
+    if (!container) return;
+    var barsHtml = funnelStates.map(function(st, i) {
+        var pct = Math.round((cumCounts[st] / maxCount) * 100);
+        var conv = i > 0 ? (cumCounts[funnelStates[i-1]] > 0 ? Math.round((cumCounts[st] / cumCounts[funnelStates[i-1]]) * 100) : 0) : 100;
+        var convText = i > 0 ? conv + '% conv.' : '';
+        return '<div class="funnel-bar"><div class="funnel-label">' + shortLabels[st] + ' (' + cumCounts[st] + ')</div>' +
+            '<div class="funnel-track"><div class="funnel-fill" style="width:' + Math.max(pct, 8) + '%;background:' + (colors[st]||'#94a3b8') + ';">' + cumCounts[st] + '</div></div>' +
+            '<div class="funnel-conv">' + convText + '</div></div>';
+    }).join('');
+
+    // Negocio breakdown table
+    var negKeys = Object.keys(negocios).sort();
+    var negTable = '<table class="funnel-negocio-table"><thead><tr><th>Negocio</th>';
+    funnelStates.forEach(function(st) { negTable += '<th>' + shortLabels[st] + '</th>'; });
+    negTable += '<th>Conv. Total</th></tr></thead><tbody>';
+    negKeys.forEach(function(neg) {
+        negTable += '<tr><td style="font-weight:600;">' + neg + '</td>';
+        var first = 0;
+        funnelStates.forEach(function(st, i) {
+            var v = negocios[neg][st] || 0;
+            if (i === 0) first = v;
+            negTable += '<td>' + v + '</td>';
+        });
+        var last = negocios[neg]['Ganada'] || 0;
+        var convTotal = first > 0 ? Math.round((last / first) * 100) : 0;
+        negTable += '<td style="font-weight:600;color:var(--success);">' + convTotal + '%</td></tr>';
+    });
+    negTable += '</tbody></table>';
+
+    container.innerHTML = '<div class="funnel-title"><i class="fas fa-filter" style="margin-right:8px;color:var(--gold);"></i>Funnel de Conversión</div>' + barsHtml + negTable;
+}
+
 function renderDashboard() {
     const total = DB.suelos.length;
     const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
@@ -3696,6 +4068,9 @@ function renderDashboard() {
         { icon: 'fas fa-bell', bg: '#fee2e2', color: '#dc2626', value: alertasCount, label: 'Alertas Pendientes' },
         { icon: 'fas fa-history', bg: '#f3e8ff', color: '#7c3aed', value: actCount, label: 'Actividades Registradas' },
     ].map(k => `<div class="kpi-card"><div class="kpi-icon" style="background:${k.bg};color:${k.color};"><i class="${k.icon}"></i></div><div class="kpi-value">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+
+    // Funnel de conversión
+    renderFunnel();
 
     // Charts
     renderDashCharts();
@@ -5915,6 +6290,170 @@ function getLastActivity(sueloId) {
 // ============================================================
 // EXPORT FICHA PDF (print-based)
 // ============================================================
+
+function exportInformeComite() {
+    showToast('Generando informe para Comité...', 'info');
+    try {
+        var doc = new jspdf.jsPDF('p', 'mm', 'a4');
+        var pw = doc.internal.pageSize.getWidth();
+        var ph = doc.internal.pageSize.getHeight();
+        var margin = 15;
+        var y = margin;
+
+        // Header
+        doc.setFillColor(74, 74, 74);
+        doc.rect(0, 0, pw, 28, 'F');
+        doc.setFillColor(196, 165, 90);
+        doc.rect(0, 28, pw, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SFI CONSULTING', margin, 12);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Informe Pipeline — ' + new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'}), margin, 20);
+        y = 38;
+
+        // KPIs
+        var total = DB.suelos.length;
+        var activas = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).length;
+        var invTotal = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
+        var scoreAvg = total ? Math.round(DB.suelos.reduce(function(sum,s){return sum+s.score_total;},0)/total) : 0;
+        var ganadas = DB.suelos.filter(function(s){return s.pipeline_estado==='Ganada'||s.pipeline_estado==='Vendida'||s.pipeline_estado==='Seguimiento';}).length;
+
+        doc.setTextColor(74, 74, 74);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resumen Ejecutivo', margin, y);
+        y += 8;
+
+        var kpis = [
+            ['Total Oportunidades', total],
+            ['Pipeline Activo', activas],
+            ['Ganadas/Seguimiento', ganadas],
+            ['Inversión Potencial', fmtMoney(invTotal)],
+            ['Score Medio', scoreAvg + '/100']
+        ];
+        var kpiW = (pw - 2*margin) / kpis.length;
+        kpis.forEach(function(kpi, i) {
+            var x = margin + i * kpiW;
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(x, y, kpiW - 4, 18, 2, 2, 'F');
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(74, 74, 74);
+            doc.text(String(kpi[1]), x + (kpiW-4)/2, y + 8, {align:'center'});
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text(kpi[0], x + (kpiW-4)/2, y + 14, {align:'center'});
+        });
+        y += 26;
+
+        // Funnel table
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(74, 74, 74);
+        doc.text('Funnel de Conversión', margin, y);
+        y += 4;
+        var funnelStates = ['Captada', 'Fase 0 - Análisis Preliminar', 'Fase 1: Compra del suelo', 'Ganada'];
+        var funnelData = funnelStates.map(function(st, i) {
+            var count = DB.suelos.filter(function(s) {
+                var sIdx = funnelStates.indexOf(s.pipeline_estado);
+                if (sIdx >= i) return true;
+                if (i <= 3 && (s.pipeline_estado === 'Vendida' || s.pipeline_estado === 'Seguimiento')) return true;
+                if (s.pipeline_estado === 'Descartada' && s.fechas_fase && s.fechas_fase[st]) return true;
+                return false;
+            }).length;
+            var inv = DB.suelos.filter(function(s){return s.pipeline_estado === st;}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
+            return [st.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1'), count, fmtMoney(inv)];
+        });
+        doc.autoTable({
+            startY: y,
+            head: [['Fase', 'Ops. acumuladas', 'Inversión en fase']],
+            body: funnelData,
+            margin: {left: margin, right: margin},
+            styles: {fontSize: 9, cellPadding: 3},
+            headStyles: {fillColor: [74,74,74], textColor: [255,255,255]},
+            theme: 'grid'
+        });
+        y = doc.lastAutoTable.finalY + 12;
+
+        // Top 10 by score
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(74, 74, 74);
+        doc.text('Top 10 Operaciones por Score', margin, y);
+        y += 4;
+        var top10 = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).sort(function(a,b){return b.score_total-a.score_total;}).slice(0,10);
+        var topData = top10.map(function(s){
+            var dias = daysSince(s.fecha_ultimo_cambio || s.fecha_captacion);
+            return [s.nombre.substring(0,25), s.ciudad, (s.negocio||'-').substring(0,12), fmtMoney(s.inversion_estimada), s.score_total, s.pipeline_estado.replace('Fase 0 - Análisis Preliminar','F0').replace('Fase 1: Compra del suelo','F1'), dias+'d'];
+        });
+        doc.autoTable({
+            startY: y,
+            head: [['Nombre', 'Ciudad', 'Negocio', 'Inversión', 'Score', 'Estado', 'Días']],
+            body: topData,
+            margin: {left: margin, right: margin},
+            styles: {fontSize: 8, cellPadding: 2.5},
+            headStyles: {fillColor: [74,74,74], textColor: [255,255,255]},
+            columnStyles: {4:{halign:'center',fontStyle:'bold'},6:{halign:'center'}},
+            theme: 'grid'
+        });
+        y = doc.lastAutoTable.finalY + 12;
+
+        // Page 2 if needed
+        if (y > ph - 60) { doc.addPage(); y = margin + 5; }
+
+        // Desglose por negocio
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(74, 74, 74);
+        doc.text('Desglose por Línea de Negocio', margin, y);
+        y += 4;
+        var negMap = {};
+        DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).forEach(function(s){
+            var neg = s.negocio || 'Sin definir';
+            if (!negMap[neg]) negMap[neg] = {count:0,inv:0,scoreSum:0,ganadas:0};
+            negMap[neg].count++;
+            negMap[neg].inv += (s.inversion_estimada||0);
+            negMap[neg].scoreSum += s.score_total;
+            if (s.pipeline_estado==='Ganada'||s.pipeline_estado==='Vendida'||s.pipeline_estado==='Seguimiento') negMap[neg].ganadas++;
+        });
+        var negData = Object.keys(negMap).sort().map(function(neg){
+            var d = negMap[neg];
+            return [neg, d.count, fmtMoney(d.inv), Math.round(d.scoreSum/d.count), d.ganadas, d.count>0?Math.round(d.ganadas/d.count*100)+'%':'0%'];
+        });
+        doc.autoTable({
+            startY: y,
+            head: [['Negocio', 'Ops', 'Inversión', 'Score medio', 'Ganadas', '% Conv.']],
+            body: negData,
+            margin: {left: margin, right: margin},
+            styles: {fontSize: 9, cellPadding: 3},
+            headStyles: {fillColor: [74,74,74], textColor: [255,255,255]},
+            columnStyles: {1:{halign:'center'},3:{halign:'center'},4:{halign:'center'},5:{halign:'center',fontStyle:'bold'}},
+            theme: 'grid'
+        });
+
+        // Footer on all pages
+        var pages = doc.internal.getNumberOfPages();
+        for (var p = 1; p <= pages; p++) {
+            doc.setPage(p);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(150, 150, 150);
+            doc.text('SFI Consulting — Confidencial — Generado ' + new Date().toLocaleString('es-ES'), margin, ph - 8);
+            doc.text('Página ' + p + ' de ' + pages, pw - margin, ph - 8, {align:'right'});
+        }
+
+        doc.save('Informe_Pipeline_SFI_' + new Date().toISOString().slice(0,10) + '.pdf');
+        showToast('Informe PDF generado', 'success');
+    } catch(err) {
+        console.error('Error generando PDF:', err);
+        showToast('Error: ' + err.message, 'error');
+    }
+}
+
 function exportFichaPDF(id) {
     var s0 = DB.suelos.find(function(x) { return x.id === id; });
     if (s0 && s0.latitud && s0.longitud) {
