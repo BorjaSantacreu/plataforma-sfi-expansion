@@ -106,7 +106,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f2f
     position:sticky;top:0;cursor:pointer;white-space:nowrap;
 }
 .data-table th:hover{color:var(--primary);}
-.data-table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;white-space:nowrap;}
+.data-table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis;}
 .data-table tr:hover{background:#f8fafc;}
 .table-wrapper{overflow-x:auto;max-height:70vh;overflow-y:auto;}
 
@@ -1192,6 +1192,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
                 <div class="form-group" style="grid-column:1/-1"><label>Dirección completa</label><input type="text" id="ns_direccion" placeholder="Ej: Av. del Puerto 123, 46023 Valencia"></div>
                 <div class="form-group"><label>Latitud</label><input type="number" step="any" id="ns_lat" placeholder="Ej: 39.4699"></div>
                 <div class="form-group"><label>Longitud</label><input type="number" step="any" id="ns_lng" placeholder="Ej: -0.3763"></div>
+                <div class="form-group" style="grid-column:1/-1"><label><i class="fas fa-map-marker-alt" style="color:var(--gold);"></i> URL de Google Maps <span class="hint">(pega el enlace y se extraen lat/lng)</span></label><input type="text" id="ns_gmaps_url" placeholder="Pega aquí un enlace de Google Maps..." oninput="handleGoogleMapsInput('ns_gmaps_url','ns_lat','ns_lng')"></div>
             </div>
         </div>
 
@@ -1336,7 +1337,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 // ============================================================
 // DATA STORE (Supabase + localStorage fallback)
 // ============================================================
-const STORAGE_KEYS = { suelos: 'sfi_suelos', contactos: 'sfi_contactos', actividades: 'sfi_actividades', scoring: 'sfi_scoring', alertas: 'sfi_alertas', emailGroups: 'sfi_email_groups' };
+const STORAGE_KEYS = { suelos: 'sfi_suelos', contactos: 'sfi_contactos', actividades: 'sfi_actividades', scoring: 'sfi_scoring', emailGroups: 'sfi_email_groups' };
 
 // Supabase state
 let SB = null; // Supabase client instance
@@ -1374,15 +1375,6 @@ let DB = {
     actividades: [],
     alertas: [],
     scoring: {
-        criterios: [
-            { id: 'ciudad', nombre: 'Ciudad Estratégica', peso: 20, descripcion: 'Valencia, Madrid, Barcelona, Málaga = máx' },
-            { id: 'viviendas', nombre: 'Nº Viviendas', peso: 15, descripcion: 'Rango óptimo 80-200' },
-            { id: 'tipologia', nombre: 'Tipología', peso: 10, descripcion: 'Cooperativa plurifamiliar = máx' },
-            { id: 'rentabilidad', nombre: 'Rentabilidad Estimada', peso: 20, descripcion: 'TIR >15% = máx' },
-            { id: 'ratio', nombre: 'Ratio Suelo/Ventas', peso: 15, descripcion: '<15% = máx' },
-            { id: 'inversion', nombre: 'Inversión Total', peso: 10, descripcion: 'Rango óptimo 5-20M€' },
-            { id: 'riesgo', nombre: 'Riesgo Urbanístico', peso: 10, descripcion: 'Bajo = máx' },
-        ],
         porNegocio: {
             'Cooperativa': {
                 ciudad: 20, viviendas: 20, tipologia: 10, rentabilidad: 15, ratio: 15, inversion: 10, riesgo: 10
@@ -1883,10 +1875,46 @@ function navigateTo(page) {
 }
 
 // ============================================================
+// GOOGLE MAPS URL PARSER
+// ============================================================
+function parseGoogleMapsUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    url = url.trim();
+    var m;
+    // Format: @39.4699,-0.3763,15z or @39.4699,-0.3763
+    m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // Format: ?q=39.4699,-0.3763 or ?q=39.4699%2C-0.3763
+    m = url.match(/[?&]q=(-?\d+\.\d+)[,%20]+(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // Format: /place/39.4699,-0.3763
+    m = url.match(/\/place\/(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // Format: ll=39.4699,-0.3763
+    m = url.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // Format: just coordinates 39.4699,-0.3763 or 39.4699, -0.3763
+    m = url.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    return null;
+}
+
+function handleGoogleMapsInput(inputId, latFieldId, lngFieldId) {
+    var url = document.getElementById(inputId).value;
+    var coords = parseGoogleMapsUrl(url);
+    if (coords && coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+        document.getElementById(latFieldId).value = coords.lat;
+        document.getElementById(lngFieldId).value = coords.lng;
+        showToast('Coordenadas extraídas: ' + coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6), 'success');
+    } else if (url.trim()) {
+        showToast('No se pudieron extraer coordenadas de la URL', 'warning');
+    }
+}
+
+// ============================================================
 // SCORING ENGINE
 // ============================================================
 function calculateScore(suelo) {
-    ensurePorNegocio();
     var negocio = suelo.negocio || 'Cooperativa';
     var pesosNeg = DB.scoring.porNegocio[negocio] || DB.scoring.porNegocio['Cooperativa'] || {};
     var rangos = (DB.scoring.rangosPorNegocio && DB.scoring.rangosPorNegocio[negocio]) || {};
@@ -1936,12 +1964,12 @@ function calculateScore(suelo) {
     var total = 0;
     SCORING_CRITERIOS.forEach(function(cr) { total += (scores[cr.id] || 0) * (weights[cr.id] || 0); });
 
-    return { total: Math.round(total), desglose: scores };
+    return { total: Math.min(100, Math.max(0, Math.round(total))), desglose: scores };
 }
 
 // Score un valor dentro de un rango configurable (mayor dentro del óptimo = 100)
 function scoreRango(val, r) {
-    if (!val || val === 0) return 10;
+    if (val === undefined || val === null || val === 0) return 10;
     if (val >= r.optMin && val <= r.optMax) return 100;
     if (val >= r.extMin && val < r.optMin) return 50 + 50 * ((val - r.extMin) / (r.optMin - r.extMin));
     if (val > r.optMax && val <= r.extMax) return 50 + 50 * ((r.extMax - val) / (r.extMax - r.optMax));
@@ -2040,7 +2068,6 @@ function generateAlerts() {
             DB.alertas.push({ id: genId(), suelo_id: s.id, tipo: 'enfriando', titulo: `Sin actividad: ${s.nombre}`, desc: `No tiene ninguna actividad registrada`, fecha: new Date().toISOString(), leida: false });
         }
     });
-    saveDB('alertas');
     updateAlertBadge();
 }
 
@@ -2057,7 +2084,6 @@ function updateAlertBadge() {
 let currentStep = 1;
 const totalSteps = 4;
 
-function showNuevoSueloLegacy() { /* kept for reference */ }
 function showNuevoSuelo() {
     const config = getPlantilla().filter(c => c.visible);
     currentStep = 1;
@@ -2142,6 +2168,7 @@ function saveSuelo() {
         direccion: document.getElementById('ns_direccion').value,
         latitud: parseFloat(document.getElementById('ns_lat').value) || null,
         longitud: parseFloat(document.getElementById('ns_lng').value) || null,
+        google_maps_url: document.getElementById('ns_gmaps_url').value || '',
         superficie_parcela: parseFloat(document.getElementById('ns_sup_parcela').value) || null,
         superficie_edificable: parseFloat(document.getElementById('ns_sup_edificable').value) || null,
         num_viviendas: parseInt(document.getElementById('ns_viviendas').value) || autoCalcViviendas(parseFloat(document.getElementById('ns_sup_edificable').value), document.getElementById('ns_tipologia').value),
@@ -2281,7 +2308,7 @@ function sortContactos(field) {
 
 function renderContactos() {
     const tableId = 'cont';
-    gfInit(tableId, ['tipo','ciudad_ops']);
+    gfInit(tableId, ['tipo']);
 
     const search = (document.getElementById('contactosSearch')?.value || '').toLowerCase();
     const tipoF = document.getElementById('contactosTipo')?.value || '';
@@ -2695,6 +2722,7 @@ function showDetalle(id) {
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">DIRECCIÓN</label><p class="dv">${s.direccion || '-'}</p><input class="de form-control" data-field="direccion" value="${(s.direccion||'').replace(/"/g,'&quot;')}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">LATITUD</label><p class="dv">${s.latitud || '-'}</p><input class="de form-control" data-field="latitud" type="number" step="any" value="${s.latitud||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">LONGITUD</label><p class="dv">${s.longitud || '-'}</p><input class="de form-control" data-field="longitud" type="number" step="any" value="${s.longitud||''}" style="display:none;"></div>
+                <div style="grid-column:1/-1;"><label class="text-light" style="font-size:11px;font-weight:700;"><i class="fas fa-map-marker-alt" style="color:var(--gold);"></i> URL GOOGLE MAPS</label><p class="dv">${s.google_maps_url ? '<a href="' + s.google_maps_url + '" target="_blank" style="color:var(--accent);font-size:12px;"><i class="fas fa-external-link-alt"></i> Abrir enlace</a>' : '-'}</p><input class="de form-control" data-field="google_maps_url" value="${(s.google_maps_url||'').replace(/"/g,'&quot;')}" placeholder="Pega URL de Google Maps..." oninput="(function(el){ var c=parseGoogleMapsUrl(el.value); if(c){ var latI=el.closest('.form-grid').querySelector('[data-field=latitud]'); var lngI=el.closest('.form-grid').querySelector('[data-field=longitud]'); if(latI)latI.value=c.lat; if(lngI)lngI.value=c.lng; } })(this)" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">SUP. PARCELA (m²)</label><p class="dv">${s.superficie_parcela ? s.superficie_parcela.toLocaleString('es-ES') + ' m²' : '-'}</p><input class="de form-control" data-field="superficie_parcela" type="number" value="${s.superficie_parcela||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">SUP. EDIFICABLE (m²t)</label><p class="dv">${s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') + ' m²t' : '-'}</p><input class="de form-control" data-field="superficie_edificable" type="number" value="${s.superficie_edificable||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">Nº VIVIENDAS</label><p class="dv">${s.num_viviendas || '-'}</p><input class="de form-control" data-field="num_viviendas" type="number" value="${s.num_viviendas||''}" style="display:none;"></div>
@@ -3119,7 +3147,7 @@ function ensurePorNegocio() {
             if (DB.scoring.porNegocio[n][cr.id] === undefined) DB.scoring.porNegocio[n][cr.id] = (DEFAULT_PESOS[n][cr.id] || 0);
         });
     });
-    // Ensure rangos storage PER NEGOCIO
+    // Ensure rangos storage PER NEGOCIO — each negocio gets independent deep-cloned ranges
     if (!DB.scoring.rangosPorNegocio) DB.scoring.rangosPorNegocio = {};
     // Migrate old global rangos to per-negocio if needed
     var _oldRangos = DB.scoring.rangos || null;
@@ -3129,11 +3157,11 @@ function ensurePorNegocio() {
         }
         SCORING_CRITERIOS.forEach(function(cr) {
             if (cr.rangoDefault && !DB.scoring.rangosPorNegocio[n][cr.id]) {
-                // If old global rangos exist, use them as starting point; otherwise use defaults
+                // Deep clone via JSON to ensure no shared references between negocios
                 if (_oldRangos && _oldRangos[cr.id]) {
-                    DB.scoring.rangosPorNegocio[n][cr.id] = Object.assign({}, _oldRangos[cr.id]);
+                    DB.scoring.rangosPorNegocio[n][cr.id] = JSON.parse(JSON.stringify(_oldRangos[cr.id]));
                 } else {
-                    DB.scoring.rangosPorNegocio[n][cr.id] = Object.assign({}, cr.rangoDefault);
+                    DB.scoring.rangosPorNegocio[n][cr.id] = JSON.parse(JSON.stringify(cr.rangoDefault));
                 }
             }
         });
@@ -3205,7 +3233,10 @@ function updateRango(criterioId, key, val) {
         var cr = SCORING_CRITERIOS.find(function(c){return c.id===criterioId;});
         DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId] = Object.assign({}, cr ? cr.rangoDefault : {});
     }
-    DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId][key] = parseFloat(val);
+    var parsed = parseFloat(val);
+    if (isNaN(parsed)) return;
+    DB.scoring.rangosPorNegocio[_scoringActiveNeg][criterioId][key] = parsed;
+    saveDB('scoring');
 }
 
 function updateScoringTotal() {
@@ -3288,13 +3319,12 @@ function renderAlertas() {
 
 function handleAlertClick(alertId, sueloId) {
     const a = DB.alertas.find(x => x.id === alertId);
-    if (a) { a.leida = true; saveDB('alertas'); updateAlertBadge(); }
+    if (a) { a.leida = true; updateAlertBadge(); }
     if (sueloId) showDetalle(sueloId);
 }
 
 function markAllAlertsRead() {
     DB.alertas.forEach(a => a.leida = true);
-    saveDB('alertas');
     updateAlertBadge();
     renderAlertas();
 }
@@ -4811,7 +4841,6 @@ function notifyApprover(suelo, approvalStep, workflowName) {
         desc: `${suelo.nombre} necesita aprobación de ${config.nombre} para avanzar a siguiente fase`,
         fecha: new Date().toISOString(), leida: false
     });
-    saveDB('alertas');
     updateAlertBadge();
 }
 
@@ -5445,7 +5474,7 @@ function showDetalleContacto(id) {
         modal = document.createElement('div');
         modal.id = 'modalDetalleContacto';
         modal.className = 'modal-overlay';
-        modal.innerHTML = '<div class="modal-box" style="max-width:700px;"><div class="modal-header"><h2 id="contactoDetalleTitulo">Contacto</h2><button class="modal-close" onclick="closeModal(\'modalDetalleContacto\')">&times;</button></div><div class="modal-body" id="contactoDetalleContent"></div></div>';
+        modal.innerHTML = '<div class="modal-box" style="max-width:900px;"><div class="modal-header"><h2 id="contactoDetalleTitulo">Contacto</h2><button class="modal-close" onclick="closeModal(\'modalDetalleContacto\')">&times;</button></div><div class="modal-body" id="contactoDetalleContent" style="max-height:80vh;overflow-y:auto;"></div></div>';
         document.body.appendChild(modal);
         modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
     }
@@ -5453,28 +5482,51 @@ function showDetalleContacto(id) {
     document.getElementById('contactoDetalleTitulo').innerHTML = '<i class="fas fa-user" style="color:var(--gold);"></i> ' + c.nombre +
         ' <button class="btn btn-outline btn-sm" onclick="closeModal(\'modalDetalleContacto\');editContacto(\'' + c.id + '\')" style="margin-left:12px;font-size:12px;color:var(--warning);border-color:var(--warning);"><i class="fas fa-pen"></i> Editar</button>' +
         ' <button class="btn btn-outline btn-sm" onclick="deleteContacto(\'' + c.id + '\')" style="font-size:12px;color:var(--danger);border-color:var(--danger);"><i class="fas fa-trash"></i> Eliminar</button>';
-    let html = '<div class="form-grid" style="margin-bottom:20px;">';
-    html += '<div><strong class="text-light" style="font-size:11px;">TIPO</strong><p><span class="badge-estado" style="background:#e2e8f0;">' + c.tipo + '</span></p></div>';
-    html += '<div><strong class="text-light" style="font-size:11px;">EMPRESA</strong><p>' + (c.empresa||'-') + '</p></div>';
-    html += '<div><strong class="text-light" style="font-size:11px;">TELÉFONO</strong><p>' + (c.telefono ? '<a href="tel:'+c.telefono+'" style="color:var(--accent);">'+c.telefono+'</a>' : '-') + '</p></div>';
-    html += '<div><strong class="text-light" style="font-size:11px;">EMAIL</strong><p>' + (c.email ? '<a href="mailto:'+c.email+'" style="color:var(--accent);">'+c.email+'</a>' : '-') + '</p></div>';
+
+    // Contact card
+    let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-radius:10px;border:1px solid var(--border);">';
+    html += '<div><strong class="text-light" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;">TIPO</strong><p style="margin-top:2px;"><span class="badge-estado" style="background:var(--gold);color:#fff;">' + c.tipo + '</span></p></div>';
+    html += '<div><strong class="text-light" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;">EMPRESA</strong><p style="margin-top:2px;font-weight:600;">' + (c.empresa||'-') + '</p></div>';
+    html += '<div><strong class="text-light" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;">TELÉFONO</strong><p style="margin-top:2px;">' + (c.telefono ? '<a href="tel:'+c.telefono+'" style="color:var(--accent);font-weight:500;">'+c.telefono+'</a>' : '-') + '</p></div>';
+    html += '<div><strong class="text-light" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;">EMAIL</strong><p style="margin-top:2px;">' + (c.email ? '<a href="mailto:'+c.email+'" style="color:var(--accent);font-weight:500;">'+c.email+'</a>' : '-') + '</p></div>';
+    if (c.notas) html += '<div style="grid-column:1/-1;"><strong class="text-light" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;">NOTAS</strong><p style="margin-top:2px;font-size:12px;color:var(--text-light);">' + c.notas + '</p></div>';
     html += '</div>';
 
+    // KPIs
+    if (ops.length) {
+        var invTotal = ops.reduce(function(s,o){ return s + (parseFloat(o.inversion_estimada)||0); }, 0);
+        var scoreMedio = Math.round(ops.reduce(function(s,o){ return s + (o.score_total||0); }, 0) / ops.length);
+        var estadoDist = {};
+        ops.forEach(function(o){ estadoDist[o.pipeline_estado] = (estadoDist[o.pipeline_estado]||0)+1; });
+        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">';
+        html += '<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid var(--border);text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--primary);">' + ops.length + '</div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;">Operaciones</div></div>';
+        html += '<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid var(--border);text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--gold);">' + fmtMoney(invTotal) + '</div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;">Inversión Total</div></div>';
+        html += '<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid var(--border);text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--accent);">' + scoreMedio + '</div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;">Score Medio</div></div>';
+        html += '<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid var(--border);text-align:center;">';
+        Object.keys(estadoDist).forEach(function(e){ var pe = PIPELINE_ESTADOS.find(function(x){return x.id===e;}); html += '<div style="font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(pe?pe.color:'#94a3b8')+';margin-right:4px;"></span>'+estadoDist[e]+' '+(e.length>18?e.substring(0,18)+'…':e)+'</div>'; });
+        html += '</div></div>';
+    }
+
+    // Operations table (expanded)
     html += '<h4 style="margin:16px 0 8px;color:var(--primary);"><i class="fas fa-layer-group" style="color:var(--gold);"></i> Operaciones Vinculadas (' + ops.length + ')</h4>';
     if (ops.length) {
-        html += '<table class="data-table"><thead><tr><th>Nombre</th><th>Ciudad</th><th>Estado</th><th>Score</th><th>Inversión</th></tr></thead><tbody>';
-        ops.forEach(s => {
-            const sc = getScoreClass(s.score_total);
-            html += '<tr style="cursor:pointer;" onclick="closeModal(\'modalDetalleContacto\');showDetalle(\''+s.id+'\');"><td style="font-weight:600;color:var(--primary);">'+s.nombre+'</td><td>'+s.ciudad+'</td><td style="font-size:11px;">'+s.pipeline_estado+'</td><td><span class="score-dot '+sc.class+'"></span> '+s.score_total+'</td><td>'+fmtMoney(s.inversion_estimada)+'</td></tr>';
+        html += '<div class="table-wrapper" style="max-height:300px;"><table class="data-table"><thead><tr><th>Nombre</th><th>Ciudad</th><th>Tipología</th><th>Negocio</th><th>Estado</th><th>Score</th><th>€/m²t</th><th>Inversión</th><th>Días</th></tr></thead><tbody>';
+        ops.forEach(function(s) {
+            var sc = getScoreClass(s.score_total);
+            var diasF = (typeof diasEnFaseActual === 'function') ? diasEnFaseActual(s) : '-';
+            var diasColor = diasF > 15 ? 'var(--danger)' : diasF > 7 ? 'var(--warning)' : 'var(--success)';
+            var estObj = PIPELINE_ESTADOS.find(function(e){return e.id===s.pipeline_estado;}) || {color:'#94a3b8'};
+            html += '<tr style="cursor:pointer;" onclick="closeModal(\'modalDetalleContacto\');showDetalle(\''+s.id+'\');"><td style="font-weight:600;color:var(--primary);min-width:120px;">'+s.nombre+'</td><td>'+(s.ciudad||'-')+'</td><td style="font-size:11px;">'+(s.tipologia||'-')+'</td><td style="font-size:11px;">'+(s.negocio||'-')+'</td><td><span class="badge-estado" style="background:'+estObj.color+'22;color:'+estObj.color+';font-size:10px;">'+(s.pipeline_estado.length>20?s.pipeline_estado.substring(0,20)+'…':s.pipeline_estado)+'</span></td><td><span class="score-dot '+sc.class+'"></span> '+s.score_total+'</td><td>'+(s.precio_m2t?'€'+Math.round(s.precio_m2t).toLocaleString('es-ES'):'-')+'</td><td>'+fmtMoney(s.inversion_estimada)+'</td><td style="font-weight:600;color:'+diasColor+';">'+diasF+'d</td></tr>';
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
     } else { html += '<p class="text-light">Sin operaciones vinculadas.</p>'; }
 
+    // Activity timeline (expanded to 20)
     if (acts.length) {
-        html += '<h4 style="margin:16px 0 8px;color:var(--primary);"><i class="fas fa-history" style="color:var(--gold);"></i> Actividad Reciente</h4>';
-        html += '<div class="timeline">' + acts.slice(0,5).map(a => {
-            const suelo = DB.suelos.find(s => s.id === a.suelo_id);
-            return '<div class="timeline-item tipo-'+a.tipo+'"><div class="timeline-meta"><span class="timeline-tipo">'+a.tipo+'</span><span>'+fmtDate(a.fecha)+'</span>'+(suelo?'<span style="font-weight:600;">'+suelo.nombre+'</span>':'')+'</div><div class="timeline-text">'+a.descripcion+'</div></div>';
+        html += '<h4 style="margin:16px 0 8px;color:var(--primary);"><i class="fas fa-history" style="color:var(--gold);"></i> Actividad (' + acts.length + ')</h4>';
+        html += '<div class="timeline" style="max-height:250px;overflow-y:auto;">' + acts.slice(0,20).map(function(a) {
+            var suelo = DB.suelos.find(function(s){ return s.id === a.suelo_id; });
+            return '<div class="timeline-item tipo-'+a.tipo+'"><div class="timeline-meta"><span class="timeline-tipo">'+a.tipo+'</span><span>'+fmtDate(a.fecha)+'</span>'+(suelo?'<span style="font-weight:600;">'+suelo.nombre+'</span>':'')+'</div><div class="timeline-text">'+a.descripcion+'</div>'+(a.proximos_pasos?'<div style="font-size:11px;color:var(--accent);margin-top:2px;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> '+a.proximos_pasos+'</div>':'')+'</div>';
         }).join('') + '</div>';
     }
 
@@ -6157,7 +6209,6 @@ function confirmarSolicitarFase(sueloId) {
         desc: suelo.pipeline_estado + ' → ' + faseNueva + '. Enviado a ' + g.nombre,
         fecha: new Date().toISOString(), leida: false
     });
-    saveDB('alertas');
     updateAlertBadge();
     window.open(mailto, '_blank');
     closeModal('modalSolicitarFase');
