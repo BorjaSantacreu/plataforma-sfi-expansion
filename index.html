@@ -1524,10 +1524,10 @@ function upsertConfig(clave, valor) {
 }
 
 // ---- PULL FROM SUPABASE ----
-function pullFromSupabase(forceOverwrite) {
+function pullFromSupabase() {
     if (!SB || !SB_CONNECTED) { alert('No hay conexion a Supabase'); return; }
     var log = document.getElementById('migrationLog');
-    if (log) { log.style.display = 'block'; log.innerHTML = 'Descargando datos...\n'; }
+    if (log) { log.style.display = 'block'; log.innerHTML = 'Descargando datos de Supabase...\n'; }
     function addLog(msg) { if (log) log.innerHTML += msg + '\n'; console.log(msg); }
 
     Promise.all([
@@ -1538,52 +1538,30 @@ function pullFromSupabase(forceOverwrite) {
     ]).then(function(results) {
         var sRes = results[0], cRes = results[1], aRes = results[2], cfgRes = results[3];
 
-        // MERGE inteligente: combina remoto + local, el más reciente gana
-        function mergeArray(localArr, remoteArr, entityName) {
-            if (!remoteArr || remoteArr.length === 0) {
-                addLog(entityName + ': sin datos en Supabase (manteniendo ' + localArr.length + ' locales)');
-                return localArr;
-            }
-            if (!localArr || localArr.length === 0) {
-                addLog(entityName + ': ' + remoteArr.length + ' registros descargados (local vacío)');
-                return remoteArr;
-            }
-            // Si se fuerza sobreescritura, usar remoto directamente
-            if (forceOverwrite) {
-                addLog(entityName + ': ' + remoteArr.length + ' registros (sobreescritura forzada)');
-                return remoteArr;
-            }
-            // Merge: para cada registro, quedarse con el más reciente por fecha_ultimo_cambio o created_at
-            var remoteMap = {};
-            remoteArr.forEach(function(r) { remoteMap[r.id] = r; });
-            var localMap = {};
-            localArr.forEach(function(l) { localMap[l.id] = l; });
-            var merged = [];
-            var allIds = new Set([...Object.keys(remoteMap), ...Object.keys(localMap)]);
-            var keptLocal = 0, keptRemote = 0, onlyLocal = 0, onlyRemote = 0;
-            allIds.forEach(function(id) {
-                var r = remoteMap[id], l = localMap[id];
-                if (r && l) {
-                    // Ambos existen: el más reciente gana
-                    var rDate = new Date(r.fecha_ultimo_cambio || r.created_at || 0).getTime();
-                    var lDate = new Date(l.fecha_ultimo_cambio || l.created_at || 0).getTime();
-                    if (rDate > lDate) { merged.push(r); keptRemote++; }
-                    else { merged.push(l); keptLocal++; }
-                } else if (r) { merged.push(r); onlyRemote++; }
-                else { merged.push(l); onlyLocal++; }
-            });
-            addLog(entityName + ': merge completado — ' + merged.length + ' total (' + keptLocal + ' local más reciente, ' + keptRemote + ' remoto más reciente, ' + onlyLocal + ' solo local, ' + onlyRemote + ' solo remoto)');
-            return merged;
+        // Supabase es la fuente de verdad: si tiene datos, se usan esos
+        if (sRes.data && sRes.data.length > 0) {
+            DB.suelos = sRes.data;
+            saveDBLocal('suelos');
+            addLog('Suelos: ' + sRes.data.length + ' registros desde Supabase');
+        } else {
+            addLog('Suelos: sin datos en Supabase (manteniendo ' + DB.suelos.length + ' locales)');
         }
 
-        DB.suelos = mergeArray(DB.suelos, sRes.data, 'Suelos');
-        saveDBLocal('suelos');
+        if (cRes.data && cRes.data.length > 0) {
+            DB.contactos = cRes.data;
+            saveDBLocal('contactos');
+            addLog('Contactos: ' + cRes.data.length + ' registros desde Supabase');
+        } else {
+            addLog('Contactos: sin datos en Supabase (manteniendo locales)');
+        }
 
-        DB.contactos = mergeArray(DB.contactos, cRes.data, 'Contactos');
-        saveDBLocal('contactos');
-
-        DB.actividades = mergeArray(DB.actividades, aRes.data, 'Actividades');
-        saveDBLocal('actividades');
+        if (aRes.data && aRes.data.length > 0) {
+            DB.actividades = aRes.data;
+            saveDBLocal('actividades');
+            addLog('Actividades: ' + aRes.data.length + ' registros desde Supabase');
+        } else {
+            addLog('Actividades: sin datos en Supabase (manteniendo locales)');
+        }
 
         if (cfgRes.data) {
             cfgRes.data.forEach(function(row) {
@@ -1604,7 +1582,7 @@ function pullFromSupabase(forceOverwrite) {
         recalcAllScores();
         generateAlerts();
         updateDBStatusUI();
-        showToast('Datos sincronizados (merge inteligente)', 'success');
+        showToast('Datos sincronizados desde Supabase', 'success');
         // Refresh current page
         var activePage = document.querySelector('.page.active');
         if (activePage) navigateTo(activePage.id.replace('page-',''));
@@ -4260,41 +4238,40 @@ function importData() {
         localStorage.setItem('sfi_import_hash', importHash);
         console.log('Imported ' + DB.suelos.length + ' suelos and ' + DB.contactos.length + ' contactos');
     } else if (storedHash !== importHash) {
-        // IMPORTED_SUELOS changed: merge new data preserving user-edited pipeline states
-        console.log('IMPORTED_SUELOS updated, merging...');
+        // IMPORTED_SUELOS changed: merge conservando SIEMPRE los datos locales del usuario
+        console.log('IMPORTED_SUELOS updated, merging (local wins)...');
         var localMap = {};
         DB.suelos.forEach(function(s) { localMap[s.id] = s; });
-        // User-editable fields to preserve from localStorage
-        var preserveFields = ['pipeline_estado','fase_anterior','score_total','observaciones','responsable','sharepoint_url'];
         var merged = IMPORTED_SUELOS.map(function(imp) {
             var local = localMap[imp.id];
             if (local) {
-                // Start from imported data (base truth for structural fields)
-                var s = Object.assign({}, imp);
-                // Preserve user-edited fields from local if they differ from default
-                preserveFields.forEach(function(f) {
-                    if (local[f] !== undefined && local[f] !== null && local[f] !== '') {
-                        s[f] = local[f];
-                    }
-                });
-                return s;
+                // LOCAL GANA: solo rellenamos campos que el usuario NO haya tocado
+                return local;
             }
+            // Nuevo suelo que no existía en local: importar
             return imp;
         });
-        // Also keep any suelos in local that aren't in IMPORTED (user-created)
+        // Mantener suelos creados por el usuario que no están en IMPORTED
         var importIds = new Set(IMPORTED_SUELOS.map(function(s){ return s.id; }));
         DB.suelos.forEach(function(s) {
             if (!importIds.has(s.id)) merged.push(s);
         });
         DB.suelos = merged;
+        // Contactos: merge sin sobreescribir locales
         if (typeof IMPORTED_CONTACTOS !== 'undefined') {
-            DB.contactos = IMPORTED_CONTACTOS;
+            var localContactMap = {};
+            DB.contactos.forEach(function(c) { localContactMap[c.id] = c; });
+            IMPORTED_CONTACTOS.forEach(function(imp) {
+                if (!localContactMap[imp.id]) {
+                    DB.contactos.push(imp); // Solo añadir nuevos, no sobreescribir
+                }
+            });
             saveDB('contactos');
         }
         recalcAllScores();
         saveDB('suelos');
         localStorage.setItem('sfi_import_hash', importHash);
-        console.log('Merged ' + merged.length + ' suelos (preserved local pipeline states)');
+        console.log('Merged ' + merged.length + ' suelos (local data preserved)');
     }
 }
 
