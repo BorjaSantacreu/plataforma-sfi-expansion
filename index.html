@@ -767,6 +767,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         <h2 style="font-size:20px;font-weight:700;color:var(--primary);">Contactos</h2>
         <button class="btn btn-accent" onclick="showNuevoContacto()"><i class="fas fa-plus"></i> Nuevo Contacto</button>
     </div>
+    <div id="contactosRankings" style="margin-bottom:20px;"></div>
     <div class="search-bar">
         <input type="text" class="search-input" id="contactosSearch" placeholder="Buscar por nombre, empresa, email..." oninput="renderContactos()">
         <select class="filter-select" id="contactosTipo" onchange="renderContactos()">
@@ -2414,7 +2415,97 @@ function sortContactos(field) {
     renderContactos();
 }
 
+function getContactOps(c) {
+    return DB.suelos.filter(function(s) {
+        if (s.contactos && s.contactos.length > 0) return s.contactos.some(function(sc){ return sc.contacto_id === c.id; });
+        return s.contacto_id === c.id;
+    });
+}
+
+function renderContactosRankings() {
+    var container = document.getElementById('contactosRankings');
+    if (!container || !DB.contactos.length) { if(container) container.innerHTML=''; return; }
+
+    // Build stats per contact
+    var stats = DB.contactos.map(function(c) {
+        var ops = getContactOps(c);
+        if (!ops.length) return null;
+        var totalOps = ops.length;
+        var captadas = ops.filter(function(s){ return s.pipeline_estado === 'Captada'; }).length;
+        var fase0 = ops.filter(function(s){ return s.pipeline_estado === 'Fase 0 - Análisis Preliminar'; }).length;
+        var fase1 = ops.filter(function(s){ return s.pipeline_estado === 'Fase 1 - Análisis Técnico'; }).length;
+        var ganadas = ops.filter(function(s){ return s.pipeline_estado === 'Ganada' || s.pipeline_estado === 'Vendida'; }).length;
+        var descartadas = ops.filter(function(s){ return s.pipeline_estado === 'Descartada'; }).length;
+        var avanzadas = fase0 + fase1 + ganadas; // ops that moved past Captada
+        var conversionRate = totalOps > 0 ? Math.round((avanzadas / totalOps) * 100) : 0;
+        var winRate = totalOps > 0 ? Math.round((ganadas / totalOps) * 100) : 0;
+        var scoreMedio = Math.round(ops.reduce(function(s,o){ return s + (o.score_total||0); },0) / ops.length);
+        return {
+            id: c.id, nombre: c.nombre, tipo: c.tipo, empresa: c.empresa,
+            totalOps: totalOps, captadas: captadas, fase0: fase0, fase1: fase1,
+            ganadas: ganadas, descartadas: descartadas, avanzadas: avanzadas,
+            conversionRate: conversionRate, winRate: winRate, scoreMedio: scoreMedio
+        };
+    }).filter(Boolean);
+
+    if (!stats.length) { container.innerHTML = ''; return; }
+
+    // Rankings
+    var topOps = stats.slice().sort(function(a,b){ return b.totalOps - a.totalOps; }).slice(0,5);
+    var topConversion = stats.filter(function(s){ return s.totalOps >= 2; }).sort(function(a,b){ return b.conversionRate - a.conversionRate || b.totalOps - a.totalOps; }).slice(0,5);
+    var topWin = stats.filter(function(s){ return s.ganadas > 0; }).sort(function(a,b){ return b.winRate - a.winRate || b.ganadas - a.ganadas; }).slice(0,5);
+    var topScore = stats.filter(function(s){ return s.totalOps >= 2; }).sort(function(a,b){ return b.scoreMedio - a.scoreMedio; }).slice(0,5);
+
+    var tipoColors = {propietario:'#3b82f6',intermediario:'#f59e0b',ayuntamiento:'#10b981',api:'#8b5cf6',notario:'#64748b',otro:'#94a3b8'};
+
+    function medal(i) { return i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--text-light);font-weight:700;font-size:12px;">#'+(i+1)+'</span>'; }
+
+    function renderRankCard(title, icon, items, valueFn) {
+        if (!items.length) return '';
+        var h = '<div class="card" style="flex:1;min-width:220px;">';
+        h += '<div class="card-header" style="padding:12px 16px;"><h3 style="font-size:13px;margin:0;"><i class="fas fa-'+icon+'" style="color:var(--gold);margin-right:6px;"></i>'+title+'</h3></div>';
+        h += '<div style="padding:8px 16px 12px;">';
+        items.forEach(function(item, i) {
+            var tColor = tipoColors[item.tipo] || '#94a3b8';
+            h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'+(i<items.length-1?'border-bottom:1px solid #f1f5f9;':'')+'" onclick="showDetalleContacto(\''+item.id+'\')" style="cursor:pointer;">';
+            h += '<span style="width:24px;text-align:center;font-size:14px;">'+medal(i)+'</span>';
+            h += '<div style="flex:1;min-width:0;">';
+            h += '<div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;" onclick="showDetalleContacto(\''+item.id+'\')">' + item.nombre + '</div>';
+            h += '<div style="font-size:10px;color:var(--text-light);">' + (item.empresa||item.tipo) + '</div>';
+            h += '</div>';
+            h += '<div style="text-align:right;font-weight:700;font-size:13px;white-space:nowrap;">' + valueFn(item) + '</div>';
+            h += '</div>';
+        });
+        h += '</div></div>';
+        return h;
+    }
+
+    // Global KPIs
+    var totalContactos = DB.contactos.length;
+    var conOps = stats.length;
+    var avgOps = stats.length ? (stats.reduce(function(s,x){return s+x.totalOps;},0)/stats.length).toFixed(1) : '0';
+    var avgConv = stats.filter(function(s){return s.totalOps>=2;}).length ? Math.round(stats.filter(function(s){return s.totalOps>=2;}).reduce(function(s,x){return s+x.conversionRate;},0)/stats.filter(function(s){return s.totalOps>=2;}).length) : 0;
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">';
+    html += '<div style="background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;padding:14px;border-radius:10px;text-align:center;"><div style="font-size:26px;font-weight:800;">'+totalContactos+'</div><div style="font-size:10px;opacity:.8;text-transform:uppercase;">Total contactos</div></div>';
+    html += '<div style="background:linear-gradient(135deg,var(--gold),#d4a853);color:#fff;padding:14px;border-radius:10px;text-align:center;"><div style="font-size:26px;font-weight:800;">'+conOps+'</div><div style="font-size:10px;opacity:.8;text-transform:uppercase;">Con operaciones</div></div>';
+    html += '<div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:14px;border-radius:10px;text-align:center;"><div style="font-size:26px;font-weight:800;">'+avgOps+'</div><div style="font-size:10px;opacity:.8;text-transform:uppercase;">Media ops/contacto</div></div>';
+    html += '<div style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;padding:14px;border-radius:10px;text-align:center;"><div style="font-size:26px;font-weight:800;">'+avgConv+'%</div><div style="font-size:10px;opacity:.8;text-transform:uppercase;">Tasa conversión media</div></div>';
+    html += '</div>';
+
+    // Rankings grid
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">';
+    html += renderRankCard('Más operaciones', 'trophy', topOps, function(it){ return it.totalOps + ' ops'; });
+    html += renderRankCard('Mayor conversión', 'chart-line', topConversion, function(it){ return it.conversionRate + '% <span style="font-size:10px;color:var(--text-light);font-weight:400;">(' + it.avanzadas + '/' + it.totalOps + ')</span>'; });
+    html += renderRankCard('Más ganadas', 'award', topWin, function(it){ return it.ganadas + ' <span style="font-size:10px;color:var(--success);font-weight:400;">(' + it.winRate + '%)</span>'; });
+    html += renderRankCard('Mejor score medio', 'star', topScore, function(it){ return '<span style="color:var(--gold);">' + it.scoreMedio + '</span> <span style="font-size:10px;color:var(--text-light);font-weight:400;">(' + it.totalOps + ' ops)</span>'; });
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
 function renderContactos() {
+    renderContactosRankings();
     const tableId = 'cont';
     gfInit(tableId, ['tipo']);
 
@@ -2428,8 +2519,7 @@ function renderContactos() {
     // Populate generic filters
     const contactOps = {};
     data.forEach(c => {
-        const ops = DB.suelos.filter(s => s.contacto_id === c.id || (s.contactos||[]).includes(c.id));
-        contactOps[c.id] = ops;
+        contactOps[c.id] = getContactOps(c);
     });
 
     // Apply generic filters
