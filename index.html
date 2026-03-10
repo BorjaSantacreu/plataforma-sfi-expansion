@@ -2740,8 +2740,7 @@ function applySavedFilter(idx) {
     var sf = savedFilters[idx];
     if (!sf) return;
     excelFilters = JSON.parse(JSON.stringify(sf.filters));
-    applyExcelFilters();
-    renderSavedFiltersBar();
+    renderSuelosTable();
     showToast('Filtro "' + sf.name + '" aplicado', 'info');
 }
 function deleteSavedFilter(idx) {
@@ -2897,6 +2896,7 @@ function getContactoNombre(s) {
 }
 
 function renderSuelosTable() {
+    renderSavedFiltersBar();
     const search = (document.getElementById('suelosSearch')?.value || '').toLowerCase();
 
     let data = DB.suelos.filter(s => {
