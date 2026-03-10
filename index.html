@@ -2740,6 +2740,14 @@ function applySavedFilter(idx) {
     var sf = savedFilters[idx];
     if (!sf) return;
     excelFilters = JSON.parse(JSON.stringify(sf.filters));
+    // Sync header filter buttons visual state
+    Object.keys(excelFilters).forEach(function(field) {
+        var btn = document.querySelector('#ef-' + field + ' .excel-filter-btn');
+        if (btn) {
+            btn.className = excelFilters[field].length > 0 ? 'excel-filter-btn active-filter' : 'excel-filter-btn';
+        }
+        populateExcelFilterDropdown(field);
+    });
     renderSuelosTable();
     showToast('Filtro "' + sf.name + '" aplicado', 'info');
 }
@@ -3574,6 +3582,8 @@ function openComparativa() {
             else if (f.fmt === 'pct') display = v ? v + '%' : '-';
             else if (f.fmt === 'num') display = v ? Math.round(v).toLocaleString('es-ES') : '-';
             else if (f.key === 'score_total') display = '<div style="font-weight:700;font-size:16px;">' + (v||0) + '</div><div class="compare-score-bar"><div class="compare-score-fill" style="width:'+(v||0)+'%;background:'+getScoreClass(v||0).color+';"></div></div>';
+            else if (f.key === 'fecha_captacion') display = v ? new Date(v).toLocaleDateString('es-ES', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+            else if (f.key === 'observaciones') display = v ? '<div style="max-height:80px;overflow-y:auto;font-size:11px;text-align:left;white-space:normal;line-height:1.4;">' + v.substring(0, 200) + (v.length > 200 ? '...' : '') + '</div>' : '-';
             else display = v || '-';
             var cls = i === bestIdx ? ' class="best"' : i === worstIdx ? ' class="worst"' : '';
             tableHtml += '<td'+cls+' style="text-align:center;">'+display+'</td>';
@@ -4000,18 +4010,28 @@ function renderFunnel() {
         }
     });
     // Add cumulative: count ops that PASSED through each stage
+    // Logic: an op passed through stage i if:
+    //   a) its current estado index >= i (it's at or beyond that stage), OR
+    //   b) it's in a terminal state (Vendida/Seguimiento) which implies it passed all stages, OR
+    //   c) it's Descartada but has fechas_fase proof of passing, OR
+    //   d) it's Descartada and its orden >= stage orden (it reached at least that far before being discarded)
+    var estadoOrden = {};
+    PIPELINE_ESTADOS.forEach(function(e) { estadoOrden[e.id] = e.orden; });
     var cumCounts = {};
     funnelStates.forEach(function(st, i) {
         cumCounts[st] = 0;
+        var stOrden = estadoOrden[st] || (i + 1);
         DB.suelos.forEach(function(s) {
             var sIdx = funnelStates.indexOf(s.pipeline_estado);
-            // If current estado is at or beyond this stage, or in terminal states
-            if (sIdx >= i || (i <= 3 && (s.pipeline_estado === 'Vendida' || s.pipeline_estado === 'Seguimiento'))) {
-                cumCounts[st]++;
-            }
-            // Descartada: check fechas_fase to see if it passed through
-            if (s.pipeline_estado === 'Descartada' && s.fechas_fase && s.fechas_fase[st]) {
-                cumCounts[st]++;
+            // Current estado is at or beyond this funnel stage
+            if (sIdx >= i) { cumCounts[st]++; return; }
+            // Terminal positive states: passed through all stages
+            if (s.pipeline_estado === 'Vendida' || s.pipeline_estado === 'Seguimiento') { cumCounts[st]++; return; }
+            // Descartada: check fechas_fase first, then fall back to fase_anterior
+            if (s.pipeline_estado === 'Descartada') {
+                if (s.fechas_fase && s.fechas_fase[st]) { cumCounts[st]++; return; }
+                // If fase_anterior has higher orden than this stage, it passed through
+                if (s.fase_anterior && estadoOrden[s.fase_anterior] >= stOrden) { cumCounts[st]++; return; }
             }
         });
     });
