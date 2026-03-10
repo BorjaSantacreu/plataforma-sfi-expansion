@@ -745,7 +745,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
                     <th class="col-sortable" onclick="sortSuelos('superficie_edificable')">m²t <span class="sort-icon" id="sort-superficie_edificable"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('precio_suelo')">Precio Suelo <span class="sort-icon" id="sort-precio_suelo"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('precio_m2t')">€/m²t <span class="sort-icon" id="sort-precio_m2t"></span></th>
-                    <th class="col-sortable" onclick="sortSuelos('inversion_estimada')">Inversión <span class="sort-icon" id="sort-inversion_estimada"></span></th>
+                    <th>Contacto</th>
                     <th class="col-sortable" onclick="sortSuelos('ratio_suelo_ventas')">Ratio S/V <span class="sort-icon" id="sort-ratio_suelo_ventas"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('hhnn_estimados')">HHNN Est. <span class="sort-icon" id="sort-hhnn_estimados"></span></th>
                     <th class="col-sortable" onclick="sortSuelos('score_total')">Score <span class="sort-icon" id="sort-score_total"></span></th>
@@ -835,7 +835,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         </div>
         <div class="card"><div class="table-wrapper">
             <table class="data-table"><thead><tr>
-                <th>Nombre</th><th>Ciudad</th><th>Provincia</th><th>Estado</th><th>Producto</th><th>Viv.</th><th>m²t</th><th>€/m²t</th><th>Inversión</th><th>Score</th><th>Pendiente de</th><th>Últ. Actividad</th><th>Responsable</th><th>Días</th><th>Acciones</th>
+                <th>Nombre</th><th>Ciudad</th><th>Provincia</th><th>Estado</th><th>Producto</th><th>Negocio</th><th>Viv.</th><th>m²t</th><th>€/m²t</th><th>Score</th><th>Contacto</th><th>Pendiente de</th><th>Responsable</th><th>Días</th><th>Acciones</th>
             </tr></thead><tbody id="pipelineTableBody"></tbody></table>
         </div></div>
     </div>
@@ -858,12 +858,13 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <th class="col-sortable" onclick="sortFaseTable('0','nombre')">Nombre</th>
             <th class="col-sortable" onclick="sortFaseTable('0','ciudad')">Ciudad</th>
             <th class="col-sortable" onclick="sortFaseTable('0','tipologia')">Tipología</th>
+            <th class="col-sortable" onclick="sortFaseTable('0','negocio')">Negocio</th>
             <th class="col-sortable" onclick="sortFaseTable('0','num_viviendas')">Viv.</th>
             <th class="col-sortable" onclick="sortFaseTable('0','superficie_edificable')">m²t</th>
             <th class="col-sortable" onclick="sortFaseTable('0','precio_suelo')">P. Suelo</th>
             <th class="col-sortable" onclick="sortFaseTable('0','precio_m2t')">€/m²t</th>
-            <th class="col-sortable" onclick="sortFaseTable('0','inversion_estimada')">Inversión</th>
             <th class="col-sortable" onclick="sortFaseTable('0','score_total')">Score</th>
+            <th>Contacto</th>
             <th>Pendiente</th>
             <th class="col-sortable" onclick="sortFaseTable('0','fecha_captacion')">Días</th>
             <th>Docs</th>
@@ -888,12 +889,13 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <th class="col-sortable" onclick="sortFaseTable('1','nombre')">Nombre</th>
             <th class="col-sortable" onclick="sortFaseTable('1','ciudad')">Ciudad</th>
             <th class="col-sortable" onclick="sortFaseTable('1','tipologia')">Tipología</th>
+            <th class="col-sortable" onclick="sortFaseTable('1','negocio')">Negocio</th>
             <th class="col-sortable" onclick="sortFaseTable('1','num_viviendas')">Viv.</th>
             <th class="col-sortable" onclick="sortFaseTable('1','superficie_edificable')">m²t</th>
             <th class="col-sortable" onclick="sortFaseTable('1','precio_suelo')">P. Suelo</th>
             <th class="col-sortable" onclick="sortFaseTable('1','precio_m2t')">€/m²t</th>
-            <th class="col-sortable" onclick="sortFaseTable('1','inversion_estimada')">Inversión</th>
             <th class="col-sortable" onclick="sortFaseTable('1','score_total')">Score</th>
+            <th>Contacto</th>
             <th>Pendiente</th>
             <th class="col-sortable" onclick="sortFaseTable('1','fecha_captacion')">Días</th>
             <th>Docs</th>
@@ -917,11 +919,12 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <th class="col-sortable" onclick="sortSeguimientoTable('nombre')">Nombre</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('ciudad')">Ciudad</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('tipologia')">Tipología</th>
+            <th class="col-sortable" onclick="sortSeguimientoTable('negocio')">Negocio</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('num_viviendas')">Viv.</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('superficie_edificable')">m²t</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('precio_suelo')">P. Suelo</th>
-            <th class="col-sortable" onclick="sortSeguimientoTable('inversion_estimada')">Inversión</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('score_total')">Score</th>
+            <th>Contacto</th>
             <th>Últ. Actividad</th>
             <th class="col-sortable" onclick="sortSeguimientoTable('fecha_captacion')">F. Alta</th>
             <th>Responsable</th>
@@ -1231,6 +1234,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <h3 style="margin-bottom:16px;color:var(--primary);">Datos Económicos</h3>
             <div class="form-grid">
                 <div class="form-group"><label>Precio solicitado del suelo (€)</label><input type="number" id="ns_precio_suelo" placeholder="Ej: 3000000"></div>
+                <div class="form-group"><label>€/m² zona (PVP) <span class="hint" id="ns_pvp_hint">(auto - datos mercado)</span></label><div style="display:flex;gap:6px;align-items:center;"><input type="number" step="any" id="ns_pvp_zona" placeholder="Auto" readonly style="background:#f8fafc;flex:1;"><label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;"><input type="checkbox" id="ns_pvp_manual_check" onchange="togglePvpManual()" style="width:auto;"> Manual</label></div></div>
                 <div class="form-group"><label>Inversión estimada (€) <span class="hint">(auto)</span></label><input type="number" id="ns_inversion" placeholder="Auto" readonly style="background:#f8fafc;"></div>
                 <div class="form-group"><label>€/m²t <span class="hint">(se calcula automáticamente)</span></label><input type="number" step="any" id="ns_precio_m2t" placeholder="Auto" readonly style="background:#f8fafc;"></div>
                 <div class="form-group"><label>Ratio suelo/ventas (%) <span class="hint">(auto)</span></label><input type="number" step="any" id="ns_ratio" placeholder="Auto" readonly style="background:#f8fafc;"></div>
@@ -1240,21 +1244,11 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         </div>
 
         <div class="form-step" data-step="4">
-            <h3 style="margin-bottom:16px;color:var(--primary);">Contacto Vinculado</h3>
-            <div class="form-grid">
-                <div class="form-group"><label>Seleccionar contacto existente</label>
-                    <select id="ns_contacto_existente" onchange="toggleNuevoContactoForm()">
-                        <option value="">-- Ninguno / Crear nuevo --</option>
-                    </select>
-                </div>
-                <div class="form-group"><label>Rol del contacto</label><select id="ns_contacto_rol">
-                    <option value="propietario">Propietario</option>
-                    <option value="intermediario">Intermediario</option>
-                    <option value="ayuntamiento">Ayuntamiento</option>
-                    <option value="api">API</option>
-                </select></div>
-            </div>
-            <div id="nuevoContactoForm" class="mt-16" style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <h3 style="margin-bottom:16px;color:var(--primary);">Contactos Vinculados</h3>
+            <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">Puedes vincular varios contactos a esta oportunidad. Cada uno con su rol y fecha.</p>
+            <div id="ns_contactos_list"></div>
+            <button type="button" class="btn btn-outline btn-sm mt-8" onclick="addContactoSlot()"><i class="fas fa-plus"></i> Añadir contacto</button>
+            <div id="nuevoContactoForm" class="mt-16" style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid var(--border);display:none;">
                 <h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">Datos del nuevo contacto</h4>
                 <div class="form-grid">
                     <div class="form-group"><label>Nombre</label><input type="text" id="ns_c_nombre" placeholder="Nombre completo"></div>
@@ -1262,6 +1256,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
                     <div class="form-group"><label>Teléfono</label><input type="tel" id="ns_c_telefono" placeholder="+34 ..."></div>
                     <div class="form-group"><label>Email</label><input type="email" id="ns_c_email" placeholder="email@ejemplo.com"></div>
                 </div>
+                <button type="button" class="btn btn-accent btn-sm mt-8" onclick="confirmNuevoContactoSlot()"><i class="fas fa-check"></i> Crear y vincular</button>
             </div>
         </div>
 
@@ -2127,37 +2122,132 @@ function stepNext() {
 
 function stepPrev() { if (currentStep > 1) { currentStep--; updateStepper(); } }
 
-function populateContactSelect() {
-    const sel = document.getElementById('ns_contacto_existente');
-    sel.innerHTML = '<option value="">-- Ninguno / Crear nuevo --</option>';
+function populateContactSelect(selectEl) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="">-- Ninguno / Crear nuevo --</option>';
     DB.contactos.forEach(c => {
-        sel.innerHTML += `<option value="${c.id}">${c.nombre} (${c.tipo}${c.empresa ? ' - ' + c.empresa : ''})</option>`;
+        selectEl.innerHTML += '<option value="' + c.id + '">' + c.nombre + ' (' + c.tipo + (c.empresa ? ' - ' + c.empresa : '') + ')</option>';
     });
 }
 
-function toggleNuevoContactoForm() {
-    document.getElementById('nuevoContactoForm').style.display = document.getElementById('ns_contacto_existente').value ? 'none' : 'block';
+// Toggle PVP zona manual/auto in new suelo form
+function togglePvpManual() {
+    var chk = document.getElementById('ns_pvp_manual_check');
+    var inp = document.getElementById('ns_pvp_zona');
+    var hint = document.getElementById('ns_pvp_hint');
+    if (chk.checked) {
+        inp.removeAttribute('readonly');
+        inp.style.background = '#fff';
+        inp.placeholder = 'Introduce €/m² manual';
+        hint.textContent = '(manual)';
+        inp.addEventListener('input', autoCalcFormEconomics);
+    } else {
+        inp.setAttribute('readonly', true);
+        inp.style.background = '#f8fafc';
+        hint.textContent = '(auto - datos mercado)';
+        inp.removeEventListener('input', autoCalcFormEconomics);
+        autoCalcFormEconomics(); // recalc with auto values
+    }
+}
+
+// Multi-contact slots for new suelo
+var _nsContactSlots = [];
+var _nsContactSlotCounter = 0;
+
+function addContactoSlot() {
+    var slotId = 'cslot_' + (_nsContactSlotCounter++);
+    _nsContactSlots.push(slotId);
+    var container = document.getElementById('ns_contactos_list');
+    var div = document.createElement('div');
+    div.id = slotId;
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid var(--border);flex-wrap:wrap;';
+    div.innerHTML = '<select class="form-control cslot-select" style="flex:1;min-width:180px;" onchange="onContactSlotChange(this,\''+slotId+'\')"><option value="">-- Seleccionar contacto --</option><option value="__new__">+ Crear nuevo contacto</option></select>' +
+        '<select class="form-control cslot-rol" style="width:140px;"><option value="propietario">Propietario</option><option value="intermediario">Intermediario</option><option value="ayuntamiento">Ayuntamiento</option><option value="api">API</option></select>' +
+        '<button type="button" class="btn btn-sm" style="background:var(--danger);color:#fff;padding:4px 8px;" onclick="removeContactoSlot(\''+slotId+'\')"><i class="fas fa-trash"></i></button>';
+    container.appendChild(div);
+    populateContactSelect(div.querySelector('.cslot-select'));
+    // Re-add the __new__ option after populate
+    var sel = div.querySelector('.cslot-select');
+    var newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '+ Crear nuevo contacto';
+    sel.appendChild(newOpt);
+}
+
+function removeContactoSlot(slotId) {
+    var el = document.getElementById(slotId);
+    if (el) el.remove();
+    _nsContactSlots = _nsContactSlots.filter(function(s){ return s !== slotId; });
+}
+
+function onContactSlotChange(selectEl, slotId) {
+    if (selectEl.value === '__new__') {
+        document.getElementById('nuevoContactoForm').style.display = 'block';
+        document.getElementById('nuevoContactoForm').dataset.targetSlot = slotId;
+        selectEl.value = '';
+    }
+}
+
+function confirmNuevoContactoSlot() {
+    var nombre = document.getElementById('ns_c_nombre').value;
+    if (!nombre) { showToast('El nombre del contacto es obligatorio', 'warning'); return; }
+    var nc = {
+        id: genId(), nombre: nombre,
+        empresa: document.getElementById('ns_c_empresa').value,
+        tipo: document.getElementById('nuevoContactoForm').closest('.form-step').querySelector('.cslot-rol') ? 'propietario' : 'propietario',
+        telefono: document.getElementById('ns_c_telefono').value,
+        email: document.getElementById('ns_c_email').value,
+        notas: '', created_at: new Date().toISOString()
+    };
+    DB.contactos.push(nc);
+    saveDB('contactos');
+    // Update target slot select
+    var targetSlotId = document.getElementById('nuevoContactoForm').dataset.targetSlot;
+    if (targetSlotId) {
+        var slotEl = document.getElementById(targetSlotId);
+        if (slotEl) {
+            var sel = slotEl.querySelector('.cslot-select');
+            populateContactSelect(sel);
+            var newOpt = document.createElement('option');
+            newOpt.value = '__new__';
+            newOpt.textContent = '+ Crear nuevo contacto';
+            sel.appendChild(newOpt);
+            sel.value = nc.id;
+        }
+    }
+    // Clear form
+    ['ns_c_nombre','ns_c_empresa','ns_c_telefono','ns_c_email'].forEach(function(id){ document.getElementById(id).value = ''; });
+    document.getElementById('nuevoContactoForm').style.display = 'none';
+    showToast('Contacto "' + nc.nombre + '" creado y vinculado', 'success');
+}
+
+function collectContactoSlots() {
+    var result = [];
+    var now = new Date().toISOString();
+    _nsContactSlots.forEach(function(slotId) {
+        var el = document.getElementById(slotId);
+        if (!el) return;
+        var cid = el.querySelector('.cslot-select').value;
+        var rol = el.querySelector('.cslot-rol').value;
+        if (cid && cid !== '__new__') {
+            result.push({ contacto_id: cid, rol: rol, fecha_alta: now, fecha_modificacion: now });
+        }
+    });
+    return result;
 }
 
 function saveSuelo() {
     const nombre = document.getElementById('ns_nombre').value;
     if (!nombre) { alert('El nombre es obligatorio'); return; }
 
-    // Handle contact
-    let contacto_id = document.getElementById('ns_contacto_existente').value;
-    if (!contacto_id && document.getElementById('ns_c_nombre').value) {
-        const nc = {
-            id: genId(), nombre: document.getElementById('ns_c_nombre').value,
-            empresa: document.getElementById('ns_c_empresa').value,
-            tipo: document.getElementById('ns_contacto_rol').value,
-            telefono: document.getElementById('ns_c_telefono').value,
-            email: document.getElementById('ns_c_email').value,
-            notas: '', created_at: new Date().toISOString()
-        };
-        DB.contactos.push(nc);
-        saveDB('contactos');
-        contacto_id = nc.id;
-    }
+    // Collect multi-contacts
+    var contactos = collectContactoSlots();
+    // Backward compat: keep contacto_id as first contact
+    var contacto_id = contactos.length > 0 ? contactos[0].contacto_id : '';
+
+    // PVP zona manual
+    var pvpManual = document.getElementById('ns_pvp_manual_check').checked;
+    var pvpZonaVal = pvpManual ? (parseFloat(document.getElementById('ns_pvp_zona').value) || null) : null;
 
     const suelo = {
         id: genId(),
@@ -2177,6 +2267,7 @@ function saveSuelo() {
         uso_suelo: document.getElementById('ns_uso').value,
         riesgo_urbanistico: document.getElementById('ns_riesgo').value,
         precio_suelo: parseFloat(document.getElementById('ns_precio_suelo').value) || null,
+        pvp_zona_manual: pvpZonaVal,
         inversion_estimada: null,
         precio_m2t: null,
         ratio_suelo_ventas: null,
@@ -2184,6 +2275,7 @@ function saveSuelo() {
         observaciones: document.getElementById('ns_observaciones').value,
         pipeline_estado: 'Captada',
         contacto_id,
+        contactos: contactos,
         score_total: 0,
         score_desglose: {},
         fecha_captacion: new Date().toISOString(),
@@ -2191,7 +2283,7 @@ function saveSuelo() {
         created_at: new Date().toISOString()
     };
 
-    // Auto-calcular campos económicos
+    // Auto-calcular campos económicos (respecting manual PVP)
     var econCalc = autoCalcEconomicos(suelo);
     if (econCalc.precio_m2t) suelo.precio_m2t = econCalc.precio_m2t;
     if (econCalc.inversion_estimada) suelo.inversion_estimada = econCalc.inversion_estimada;
@@ -2218,12 +2310,28 @@ function autoCalcFormEconomics() {
     var tipologia = document.getElementById('ns_tipologia').value;
     if (!supEdif || !precioSuelo) return;
 
-    var fakeSuelo = { superficie_edificable: supEdif, precio_suelo: precioSuelo, tipologia: tipologia };
+    var pvpManualCheck = document.getElementById('ns_pvp_manual_check');
+    var pvpManualVal = (pvpManualCheck && pvpManualCheck.checked) ? parseFloat(document.getElementById('ns_pvp_zona').value) : null;
+    var fakeSuelo = { superficie_edificable: supEdif, precio_suelo: precioSuelo, tipologia: tipologia, pvp_zona_manual: pvpManualVal };
+    // Also populate pvp_zona auto if not manual
+    var ciudad = document.getElementById('ns_ciudad') ? document.getElementById('ns_ciudad').value : '';
+    var provincia = document.getElementById('ns_provincia') ? document.getElementById('ns_provincia').value : '';
+    if (!pvpManualVal) {
+        fakeSuelo.ciudad = ciudad;
+        fakeSuelo.provincia = provincia;
+    }
     var calc = autoCalcEconomicos(fakeSuelo);
     if (calc.precio_m2t) document.getElementById('ns_precio_m2t').value = calc.precio_m2t;
     if (calc.inversion_estimada) document.getElementById('ns_inversion').value = Math.round(calc.inversion_estimada);
     if (calc.ratio_suelo_ventas !== undefined) document.getElementById('ns_ratio').value = calc.ratio_suelo_ventas;
     if (calc.rentabilidad_estimada !== undefined) document.getElementById('ns_rentabilidad').value = calc.rentabilidad_estimada;
+    // Show PVP zona auto value
+    if (!pvpManualVal) {
+        var pvData = (typeof getPrecioVentaM2 === 'function') ? getPrecioVentaM2(ciudad, provincia) : null;
+        if (pvData && pvData.on) {
+            document.getElementById('ns_pvp_zona').value = pvData.on;
+        }
+    }
 }
 ['ns_precio_suelo','ns_sup_edificable'].forEach(function(id) {
     document.getElementById(id)?.addEventListener('input', autoCalcFormEconomics);
@@ -2512,6 +2620,21 @@ document.addEventListener('click', e => {
     }
 });
 
+// Get primary contact name for table display
+function getContactoNombre(s) {
+    // Multi-contact: use first from contactos array
+    if (s.contactos && s.contactos.length > 0) {
+        var c = DB.contactos.find(function(x){ return x.id === s.contactos[0].contacto_id; });
+        if (c) return c.nombre + (s.contactos.length > 1 ? ' <span style="color:var(--text-light);font-size:10px;">+' + (s.contactos.length - 1) + '</span>' : '');
+    }
+    // Legacy single contacto_id
+    if (s.contacto_id) {
+        var c = DB.contactos.find(function(x){ return x.id === s.contacto_id; });
+        if (c) return c.nombre;
+    }
+    return '<span class="text-light">-</span>';
+}
+
 function renderSuelosTable() {
     const search = (document.getElementById('suelosSearch')?.value || '').toLowerCase();
 
@@ -2602,7 +2725,7 @@ function renderSuelosTable() {
             <td class="col-number">${s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') : '-'}</td>
             <td class="col-number">${s.precio_suelo ? fmtMoney(s.precio_suelo) : '-'}</td>
             <td class="col-number">${s.precio_m2t ? '€' + Math.round(s.precio_m2t).toLocaleString('es-ES') : '-'}</td>
-            <td class="col-number" style="font-weight:600;">${fmtMoney(s.inversion_estimada)}</td>
+            <td style="font-size:11px;">${getContactoNombre(s)}</td>
             <td class="col-number" style="color:${s.ratio_suelo_ventas && s.ratio_suelo_ventas <= 15 ? 'var(--success)' : s.ratio_suelo_ventas && s.ratio_suelo_ventas <= 20 ? 'var(--warning)' : s.ratio_suelo_ventas ? 'var(--danger)' : 'inherit'};">${s.ratio_suelo_ventas ? s.ratio_suelo_ventas + '%' : '-'}</td>
             <td class="col-number" style="color:var(--gold);font-weight:600;">${hhnn ? fmtMoney(hhnn) : '-'}</td>
             <td class="text-center"><span style="display:inline-flex;align-items:center;gap:3px;"><span class="score-dot ${sc.class}"></span><strong>${s.score_total}</strong>${s.score_manual ? '<sup style="color:var(--warning);font-size:8px;">M</sup>' : ''}</span></td>
@@ -2633,8 +2756,8 @@ function toggleDetalleEdit(id) {
 function saveDetalleEdit(id) {
     var s = DB.suelos.find(function(x){ return x.id === id; });
     if (!s) return;
-    var numFields = ['superficie_parcela','superficie_edificable','num_viviendas','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','latitud','longitud'];
-    document.querySelectorAll('#detalleFieldsGrid .de, #dt-info .de').forEach(function(el){
+    var numFields = ['superficie_parcela','superficie_edificable','num_viviendas','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','latitud','longitud','pvp_zona_manual'];
+    document.querySelectorAll('#detalleFieldsGrid .de, #dt-info .de, #dt-economico .de').forEach(function(el){
         var field = el.getAttribute('data-field');
         if (!field) return;
         var val = el.value;
@@ -2644,6 +2767,12 @@ function saveDetalleEdit(id) {
             s[field] = val || '';
         }
     });
+    // Recalc economics with possibly manual PVP
+    var econCalc = autoCalcEconomicos(s);
+    if (econCalc.precio_m2t) s.precio_m2t = econCalc.precio_m2t;
+    if (econCalc.inversion_estimada) s.inversion_estimada = econCalc.inversion_estimada;
+    if (econCalc.ratio_suelo_ventas !== undefined) s.ratio_suelo_ventas = econCalc.ratio_suelo_ventas;
+    if (econCalc.rentabilidad_estimada !== undefined) s.rentabilidad_estimada = econCalc.rentabilidad_estimada;
     // Update fecha_ultimo_cambio
     s.fecha_ultimo_cambio = new Date().toISOString();
     // Recalculate score
@@ -2661,10 +2790,65 @@ function saveDetalleEdit(id) {
     if (typeof renderDashboard === 'function') renderDashboard();
 }
 
+// Toggle economic edit mode in detail view
+function toggleDetalleEconEdit(id) {
+    document.querySelectorAll('#dt-economico .de').forEach(function(el){ el.style.display = ''; });
+    document.getElementById('btnEditEcon').style.display = 'none';
+    document.getElementById('btnSaveEcon').style.display = '';
+    document.getElementById('btnCancelEcon').style.display = '';
+}
+
+// Show add contact form in detail view
+function showAddContactoToSuelo(sueloId) {
+    var form = document.getElementById('dt-contacto-add-form');
+    form.style.display = 'block';
+    var sel = document.getElementById('dt_add_contacto_sel');
+    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+    DB.contactos.forEach(function(c) {
+        sel.innerHTML += '<option value="' + c.id + '">' + c.nombre + ' (' + c.tipo + (c.empresa ? ' - ' + c.empresa : '') + ')</option>';
+    });
+}
+
+function confirmAddContactoToSuelo(sueloId) {
+    var cid = document.getElementById('dt_add_contacto_sel').value;
+    var rol = document.getElementById('dt_add_contacto_rol').value;
+    if (!cid) { showToast('Selecciona un contacto', 'warning'); return; }
+    var s = DB.suelos.find(function(x){ return x.id === sueloId; });
+    if (!s) return;
+    if (!s.contactos) s.contactos = [];
+    // Check duplicates
+    if (s.contactos.some(function(sc){ return sc.contacto_id === cid; })) {
+        showToast('Este contacto ya está vinculado', 'warning'); return;
+    }
+    var now = new Date().toISOString();
+    s.contactos.push({ contacto_id: cid, rol: rol, fecha_alta: now, fecha_modificacion: now });
+    // Keep contacto_id in sync (first contact)
+    if (!s.contacto_id) s.contacto_id = cid;
+    s.fecha_ultimo_cambio = now;
+    saveDB('suelos');
+    showDetalle(sueloId);
+    showToast('Contacto vinculado correctamente', 'success');
+}
+
+function removeContactoFromSuelo(sueloId, contactoId) {
+    var s = DB.suelos.find(function(x){ return x.id === sueloId; });
+    if (!s || !s.contactos) return;
+    s.contactos = s.contactos.filter(function(sc){ return sc.contacto_id !== contactoId; });
+    // Update contacto_id to first remaining
+    s.contacto_id = s.contactos.length > 0 ? s.contactos[0].contacto_id : '';
+    s.fecha_ultimo_cambio = new Date().toISOString();
+    saveDB('suelos');
+    showDetalle(sueloId);
+    showToast('Contacto desvinculado', 'info');
+}
+
 function showDetalle(id) {
     const s = DB.suelos.find(x => x.id === id);
     if (!s) return;
-    const contacto = DB.contactos.find(c => c.id === s.contacto_id);
+    // Multi-contact support: migrate legacy contacto_id to contactos array
+    if (!s.contactos && s.contacto_id) { s.contactos = [{ contacto_id: s.contacto_id, rol: 'propietario', fecha_alta: s.created_at || new Date().toISOString(), fecha_modificacion: s.created_at || new Date().toISOString() }]; }
+    var _sContactos = (s.contactos || []).map(function(sc) { var c = DB.contactos.find(function(x){ return x.id === sc.contacto_id; }); return c ? Object.assign({}, c, { _rol: sc.rol, _fecha_alta: sc.fecha_alta, _fecha_modificacion: sc.fecha_modificacion }) : null; }).filter(Boolean);
+    const contacto = _sContactos.length > 0 ? _sContactos[0] : null;
     const acts = DB.actividades.filter(a => a.suelo_id === id).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
     const sc = getScoreClass(s.score_total);
     const estadoColor = PIPELINE_ESTADOS.find(e=>e.id===s.pipeline_estado)?.color||'#94a3b8';
@@ -2755,8 +2939,14 @@ function showDetalle(id) {
         </div>
 
         <div class="tab-panel" id="dt-economico">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+                <button class="btn btn-outline btn-sm" id="btnEditEcon" onclick="toggleDetalleEconEdit('${s.id}')"><i class="fas fa-pen"></i> Editar económico</button>
+                <button class="btn btn-primary btn-sm" id="btnSaveEcon" onclick="saveDetalleEdit('${s.id}')" style="display:none;margin-left:6px;"><i class="fas fa-save"></i> Guardar</button>
+                <button class="btn btn-outline btn-sm" id="btnCancelEcon" onclick="showDetalle('${s.id}')" style="display:none;margin-left:6px;"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
             <div class="form-grid">
                 <div><strong class="text-light" style="font-size:11px;">PRECIO SUELO</strong><p style="font-size:20px;font-weight:700;">${fmtMoney(s.precio_suelo)}</p></div>
+                <div><strong class="text-light" style="font-size:11px;">€/m² ZONA (PVP) ${s.pvp_zona_manual ? '<span style="background:#f59e0b22;color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;">MANUAL</span>' : '<span style="background:#10b98122;color:#10b981;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;">AUTO</span>'}</strong><p style="font-size:20px;font-weight:700;color:${s.pvp_zona_manual?'#f59e0b':'#10b981'};">${s.pvp_zona_manual ? '€' + Math.round(s.pvp_zona_manual).toLocaleString('es-ES') + '/m²' : (() => { var pv = getPrecioVentaM2(s.ciudad, s.provincia); return pv ? '€' + pv.on.toLocaleString('es-ES') + '/m²' : 'N/D'; })()}</p><input class="de form-control" data-field="pvp_zona_manual" type="number" step="any" value="${s.pvp_zona_manual||''}" placeholder="Dejar vacío = automático" style="display:none;"></div>
                 <div><strong class="text-light" style="font-size:11px;">INVERSIÓN ESTIMADA</strong><p style="font-size:20px;font-weight:700;">${fmtMoney(s.inversion_estimada)}</p></div>
                 <div><strong class="text-light" style="font-size:11px;">€/M²T</strong><p style="font-size:20px;font-weight:700;">${s.precio_m2t ? '€' + Math.round(s.precio_m2t).toLocaleString('es-ES') : '-'}</p></div>
                 <div><strong class="text-light" style="font-size:11px;">RATIO SUELO/VENTAS</strong><p style="font-size:20px;font-weight:700;">${s.ratio_suelo_ventas ? s.ratio_suelo_ventas + '%' : '-'}</p></div>
@@ -2774,31 +2964,36 @@ function showDetalle(id) {
             </div>
 
         <div class="tab-panel" id="dt-contacto">
-            ${contacto ? `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <strong style="font-size:13px;color:var(--primary);">Contactos vinculados (${_sContactos.length})</strong>
+                <button class="btn btn-outline btn-sm" onclick="showAddContactoToSuelo('${s.id}')"><i class="fas fa-plus"></i> Añadir contacto</button>
+            </div>
+            <div id="dt-contacto-add-form" style="display:none;background:#f0f9ff;padding:14px;border-radius:8px;border:1px solid #bfdbfe;margin-bottom:14px;">
                 <div class="form-grid">
-                    <div><strong class="text-light" style="font-size:11px;">NOMBRE</strong><p style="font-weight:600;">${contacto.nombre}</p></div>
-                    <div><strong class="text-light" style="font-size:11px;">TIPO</strong><p>${contacto.tipo}</p></div>
-                    <div><strong class="text-light" style="font-size:11px;">EMPRESA</strong><p>${contacto.empresa || '-'}</p></div>
-                    <div><strong class="text-light" style="font-size:11px;">TELÉFONO</strong><p>${contacto.telefono ? '<a href="tel:' + contacto.telefono + '" style="color:var(--accent);">' + contacto.telefono + '</a>' : '-'}</p></div>
-                    <div><strong class="text-light" style="font-size:11px;">EMAIL</strong><p>${contacto.email ? '<a href="mailto:' + contacto.email + '" style="color:var(--accent);">' + contacto.email + '</a>' : '-'}</p></div>
+                    <div class="form-group"><label style="font-size:11px;">Contacto</label><select id="dt_add_contacto_sel" class="form-control"></select></div>
+                    <div class="form-group"><label style="font-size:11px;">Rol</label><select id="dt_add_contacto_rol" class="form-control"><option value="propietario">Propietario</option><option value="intermediario">Intermediario</option><option value="ayuntamiento">Ayuntamiento</option><option value="api">API</option></select></div>
                 </div>
-                <div class="mt-16">
-                    <strong class="text-light" style="font-size:11px;">OTRAS OPERACIONES DE ESTE CONTACTO</strong>
-                    ${(() => {
-                        const otherOps = DB.suelos.filter(op => op.contacto_id === contacto.id && op.id !== s.id);
-                        if (!otherOps.length) return '<p class="text-light" style="margin-top:8px;">No tiene otras operaciones vinculadas.</p>';
-                        return '<div style="margin-top:8px;">' + otherOps.map(op => {
-                            const osc = getScoreClass(op.score_total);
-                            return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fafc;border-radius:6px;margin-bottom:6px;cursor:pointer;border:1px solid var(--border);" onclick="closeModal(\'modalDetalle\');setTimeout(()=>showDetalle(\''+op.id+'\'),200);">' +
-                            '<span class="score-dot '+osc.class+'"></span>' +
-                            '<span style="font-weight:600;">'+op.nombre+'</span>' +
-                            '<span class="text-light" style="font-size:12px;">'+op.ciudad+'</span>' +
-                            '<span class="badge-estado" style="font-size:10px;background:'+((PIPELINE_ESTADOS.find(e=>e.id===op.pipeline_estado)||{}).color||'#94a3b8')+'22;color:'+((PIPELINE_ESTADOS.find(e=>e.id===op.pipeline_estado)||{}).color||'#94a3b8')+';">'+op.pipeline_estado+'</span>' +
-                            '</div>';
-                        }).join('') + '</div>';
-                    })()}
+                <div style="display:flex;gap:6px;margin-top:8px;">
+                    <button class="btn btn-accent btn-sm" onclick="confirmAddContactoToSuelo('${s.id}')"><i class="fas fa-check"></i> Vincular</button>
+                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('dt-contacto-add-form').style.display='none'"><i class="fas fa-times"></i> Cancelar</button>
                 </div>
-            ` : '<p class="text-light">No hay contacto vinculado a esta oportunidad.</p>'}
+            </div>
+            ${_sContactos.length > 0 ? _sContactos.map(function(ct, idx) {
+                var rolColors = { propietario:'#10b981', intermediario:'#3b82f6', ayuntamiento:'#8b5cf6', api:'#f59e0b' };
+                var rolColor = rolColors[ct._rol] || '#94a3b8';
+                return '<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+                    '<div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;font-size:15px;">' + ct.nombre + '</span><span style="background:' + rolColor + '22;color:' + rolColor + ';padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;">' + (ct._rol || ct.tipo) + '</span></div>' +
+                    '<button class="btn btn-sm" style="background:var(--danger);color:#fff;padding:2px 8px;font-size:11px;" onclick="removeContactoFromSuelo(\''+s.id+'\',\''+ct.id+'\')"><i class="fas fa-unlink"></i></button>' +
+                    '</div>' +
+                    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;font-size:12px;">' +
+                    '<div><span class="text-light">Empresa:</span> ' + (ct.empresa || '-') + '</div>' +
+                    '<div><span class="text-light">Teléfono:</span> ' + (ct.telefono ? '<a href="tel:' + ct.telefono + '" style="color:var(--accent);">' + ct.telefono + '</a>' : '-') + '</div>' +
+                    '<div><span class="text-light">Email:</span> ' + (ct.email ? '<a href="mailto:' + ct.email + '" style="color:var(--accent);">' + ct.email + '</a>' : '-') + '</div>' +
+                    '<div><span class="text-light">Vinculado:</span> ' + (ct._fecha_alta ? new Date(ct._fecha_alta).toLocaleDateString('es-ES') : '-') + '</div>' +
+                    '</div>' +
+                    '</div>';
+            }).join('') : '<p class="text-light" style="text-align:center;padding:20px;">No hay contactos vinculados a esta oportunidad.</p>'}
         </div>
 
         <div class="tab-panel" id="dt-actividad">
@@ -3084,17 +3279,19 @@ function renderPipelineTable() {
         const lastAct = typeof getLastActivity === 'function' ? getLastActivity(s) : '-';
         const _pa = typeof getPendingApprover === 'function' ? getPendingApprover(s) : null;
         const pending = _pa && _pa.text ? '<span style="color:'+(_pa.color||'inherit')+'">'+_pa.text+'</span>' : '-';
+        var _ctName = getContactoNombre(s);
         return '<tr onclick="showDetalle(\'' + s.id + '\')" style="cursor:pointer;">' +
             '<td style="font-weight:600;color:var(--primary);">' + s.nombre + '</td>' +
             '<td>' + s.ciudad + '</td>' +
             '<td>' + (s.provincia || '-') + '</td>' +
             '<td><span class="badge" style="background:' + est.color + '22;color:' + est.color + ';font-size:11px;">' + s.pipeline_estado + '</span></td>' +
             '<td>' + (s.tipologia || '-') + '</td>' +
+            '<td style="font-size:11px;">' + (s.negocio || '-') + '</td>' +
             '<td class="text-center">' + (s.num_viviendas || '-') + '</td>' +
             '<td class="text-center">' + (s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') : '-') + '</td>' +
             '<td class="text-center">' + (s.precio_m2t ? '€' + Math.round(s.precio_m2t).toLocaleString('es-ES') : '-') + '</td>' +
-            '<td>' + fmtMoney(s.inversion_estimada) + '</td>' +
             '<td class="text-center"><span class="score-dot ' + sc.class + '"></span><strong>' + s.score_total + '</strong></td>' +
+            '<td style="font-size:11px;">' + _ctName + '</td>' +
             '<td style="font-size:11px;">' + pending + '</td>' +
             '<td style="font-size:11px;">' + (s.responsable || '-') + '</td>' +
             '<td class="text-center" style="font-weight:600;color:'+(diasF>15?'var(--danger)':diasF>7?'var(--warning)':'var(--success)')+';">' + diasF + 'd</td>' +
@@ -4315,16 +4512,18 @@ function renderFase(num) {
         const docsColor = docsCount >= 5 ? 'var(--success)' : docsCount >= 3 ? 'var(--warning)' : 'var(--danger)';
         const _pa = typeof getPendingApprover === 'function' ? getPendingApprover(s) : null;
         const pending = _pa && _pa.text ? '<span style="color:'+(_pa.color||'inherit')+'">'+_pa.text+'</span>' : '-';
+        var _ctName = getContactoNombre(s);
         return '<tr onclick="showDetalle(\'' + s.id + '\')" style="cursor:pointer;">' +
             '<td style="font-weight:600;color:var(--primary);">' + s.nombre + '</td>' +
             '<td>' + s.ciudad + '</td>' +
             '<td>' + (s.tipologia || '-') + '</td>' +
+            '<td style="font-size:11px;">' + (s.negocio || '-') + '</td>' +
             '<td class="text-center">' + (s.num_viviendas || '-') + '</td>' +
             '<td class="text-center">' + (s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') : '-') + '</td>' +
             '<td class="text-center">' + (s.precio_suelo ? fmtMoney(s.precio_suelo) : '-') + '</td>' +
             '<td class="text-center">' + (s.precio_m2t ? '€' + Math.round(s.precio_m2t).toLocaleString('es-ES') : '-') + '</td>' +
-            '<td>' + fmtMoney(s.inversion_estimada) + '</td>' +
             '<td class="text-center"><span class="score-dot ' + sc.class + '"></span><strong>' + s.score_total + '</strong></td>' +
+            '<td style="font-size:11px;">' + _ctName + '</td>' +
             '<td class="text-center" style="font-size:11px;">' + pending + '</td>' +
             '<td class="text-center">' + dias + 'd</td>' +
             '<td><span style="color:' + docsColor + ';font-weight:600;">' + docsCount + '/' + docsTotal + '</span></td>' +
@@ -4408,16 +4607,19 @@ function renderSeguimiento() {
         tableEl.innerHTML = sorted.length ? sorted.map(s => {
             const sc = getScoreClass(s.score_total);
             const dias = daysSince(s.fecha_captacion);
+            var _ctName = getContactoNombre(s);
             return '<tr onclick="showDetalle(\'' + s.id + '\')" style="cursor:pointer;">' +
                 '<td style="font-weight:600;color:var(--primary);">' + s.nombre + '</td>' +
                 '<td>' + s.ciudad + '</td>' +
                 '<td>' + (s.tipologia || '-') + '</td>' +
+                '<td style="font-size:11px;">' + (s.negocio || '-') + '</td>' +
                 '<td class="text-center">' + (s.num_viviendas || '-') + '</td>' +
                 '<td class="text-center">' + (s.superficie_edificable ? s.superficie_edificable.toLocaleString('es-ES') : '-') + '</td>' +
-                '<td>' + (s.vertical || '-') + '</td>' +
-                '<td>' + fmtMoney(s.inversion_estimada) + '</td>' +
+                '<td class="text-center">' + (s.precio_suelo ? fmtMoney(s.precio_suelo) : '-') + '</td>' +
                 '<td class="text-center"><span class="score-dot ' + sc.class + '"></span><strong>' + s.score_total + '</strong></td>' +
+                '<td style="font-size:11px;">' + _ctName + '</td>' +
                 '<td class="text-center">' + dias + 'd</td>' +
+                '<td class="text-center" style="font-size:11px;">' + fmtDate(s.fecha_captacion) + '</td>' +
                 '<td style="font-size:11px;">' + (s.responsable || '-') + '</td>' +
                 '<td onclick="event.stopPropagation();">' + buildFaseStateDropdown(s.id, s.pipeline_estado) + '</td>' +
             '</tr>';
@@ -4711,7 +4913,17 @@ function autoCalcEconomicos(suelo) {
     var supEdif = parseFloat(suelo.superficie_edificable) || 0;
     var precioSuelo = parseFloat(suelo.precio_suelo) || 0;
 
+    // PVP zona: manual override > market data > params default
+    var pvpM2 = p.pvp_m2;
+    if (suelo.pvp_zona_manual && parseFloat(suelo.pvp_zona_manual) > 0) {
+        pvpM2 = parseFloat(suelo.pvp_zona_manual);
+    } else if (suelo.ciudad || suelo.provincia) {
+        var pvData = (typeof getPrecioVentaM2 === 'function') ? getPrecioVentaM2(suelo.ciudad, suelo.provincia) : null;
+        if (pvData && pvData.on > 0) pvpM2 = pvData.on;
+    }
+
     var result = {};
+    result.pvp_m2_used = pvpM2; // track which PVP was used
 
     // €/m²t = precio suelo / superficie edificable
     if (supEdif > 0 && precioSuelo > 0) {
@@ -4726,14 +4938,14 @@ function autoCalcEconomicos(suelo) {
     }
 
     // Ratio suelo/ventas = precio_suelo / (pvp_m2 * sup_edificable) * 100
-    if (supEdif > 0 && precioSuelo > 0 && p.pvp_m2 > 0) {
-        var ingresosBrutos = p.pvp_m2 * supEdif;
+    if (supEdif > 0 && precioSuelo > 0 && pvpM2 > 0) {
+        var ingresosBrutos = pvpM2 * supEdif;
         result.ratio_suelo_ventas = Math.round((precioSuelo / ingresosBrutos) * 1000) / 10;
     }
 
     // Rentabilidad = (ingresos - inversión) / inversión * 100
-    if (result.inversion_estimada && supEdif > 0 && p.pvp_m2 > 0) {
-        var ingresos = p.pvp_m2 * supEdif;
+    if (result.inversion_estimada && supEdif > 0 && pvpM2 > 0) {
+        var ingresos = pvpM2 * supEdif;
         var margen = ingresos - result.inversion_estimada;
         result.rentabilidad_estimada = Math.round((margen / result.inversion_estimada) * 1000) / 10;
     }
