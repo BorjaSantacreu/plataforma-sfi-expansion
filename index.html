@@ -4491,12 +4491,13 @@ function renderFase(num) {
             gfBuildHeader(tableId, 'nombre', 'Nombre'+arrow('nombre'), sf('nombre')) +
             gfBuildHeader(tableId, 'ciudad', 'Ciudad'+arrow('ciudad'), sf('ciudad')) +
             gfBuildHeader(tableId, 'tipologia', 'Tipo'+arrow('tipologia'), sf('tipologia')) +
+            gfBuildHeader(tableId, 'negocio', 'Negocio'+arrow('negocio'), sf('negocio')) +
             gfBuildHeader(tableId, 'num_viviendas', 'Viv.'+arrow('num_viviendas'), sf('num_viviendas')) +
             gfBuildHeader(tableId, 'superficie_edificable', 'm²t'+arrow('superficie_edificable'), sf('superficie_edificable')) +
             gfBuildHeader(tableId, 'precio_suelo', 'P. Suelo'+arrow('precio_suelo'), sf('precio_suelo')) +
             gfBuildHeader(tableId, 'precio_m2t', '€/m²t'+arrow('precio_m2t'), sf('precio_m2t')) +
-            gfBuildHeader(tableId, 'inversion_estimada', 'Inversión'+arrow('inversion_estimada'), sf('inversion_estimada')) +
             gfBuildHeader(tableId, 'score_range', 'Score'+arrow('score_total'), sf('score_total')) +
+            '<th>Contacto</th>' +
             '<th>Pendiente</th>' +
             gfBuildHeader(tableId, 'fecha_captacion', 'Días'+arrow('fecha_captacion'), sf('fecha_captacion')) +
             '<th>Docs</th>' +
@@ -4592,12 +4593,13 @@ function renderSeguimiento() {
             gfBuildHeader(tableId, 'nombre', 'Nombre'+arrow('nombre'), sf('nombre')) +
             gfBuildHeader(tableId, 'ciudad', 'Ciudad'+arrow('ciudad'), sf('ciudad')) +
             gfBuildHeader(tableId, 'tipologia', 'Tipo'+arrow('tipologia'), sf('tipologia')) +
+            gfBuildHeader(tableId, 'negocio', 'Negocio'+arrow('negocio'), sf('negocio')) +
             gfBuildHeader(tableId, 'num_viviendas', 'Viv.'+arrow('num_viviendas'), sf('num_viviendas')) +
             gfBuildHeader(tableId, 'superficie_edificable', 'm²t'+arrow('superficie_edificable'), sf('superficie_edificable')) +
-            gfBuildHeader(tableId, 'vertical', 'Vertical'+arrow('vertical'), sf('vertical')) +
-            gfBuildHeader(tableId, 'inversion_estimada', 'Inversión'+arrow('inversion_estimada'), sf('inversion_estimada')) +
+            gfBuildHeader(tableId, 'precio_suelo', 'P. Suelo'+arrow('precio_suelo'), sf('precio_suelo')) +
             gfBuildHeader(tableId, 'score_range', 'Score'+arrow('score_total'), sf('score_total')) +
-            gfBuildHeader(tableId, 'fecha_captacion', 'Días'+arrow('fecha_captacion'), sf('fecha_captacion')) +
+            '<th>Contacto</th>' +
+            gfBuildHeader(tableId, 'fecha_captacion', 'F. Alta'+arrow('fecha_captacion'), sf('fecha_captacion')) +
             gfBuildHeader(tableId, 'responsable', 'Responsable', null) +
             '<th>Estado</th>';
     }
