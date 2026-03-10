@@ -4950,8 +4950,8 @@ function renderFase(num) {
     // Text search
     if (searchVal) ops = ops.filter(s => s.nombre.toLowerCase().includes(searchVal) || s.ciudad.toLowerCase().includes(searchVal) || (s.responsable||'').toLowerCase().includes(searchVal));
 
-    const totalInv = ops.reduce((s, o) => s + (o.inversion_estimada || 0), 0);
     const totalViv = ops.reduce((s, o) => s + (o.num_viviendas || 0), 0);
+    const totalHHNN = ops.reduce((s, o) => s + (calcHHNN(o) || 0), 0);
     const avgScore = ops.length ? Math.round(ops.reduce((s, o) => s + o.score_total, 0) / ops.length) : 0;
     const avgDays = ops.length ? Math.round(ops.reduce((s, o) => s + daysSince(o.fecha_captacion), 0) / ops.length) : 0;
     const docsComplete = ops.filter(s => { const d = s.docs || {}; return Object.values(d).filter(Boolean).length >= 4; }).length;
@@ -4966,7 +4966,7 @@ function renderFase(num) {
 
     document.getElementById(tableId + 'KPIs').innerHTML = [
         { icon: 'fas fa-layer-group', bg: '#dbeafe', color: '#1d4ed8', value: ops.length, label: 'Operaciones' },
-        { icon: 'fas fa-euro-sign', bg: '#fef3c7', color: '#d97706', value: fmtMoney(totalInv), label: 'Inversión Total' },
+        { icon: 'fas fa-coins', bg: '#fef3c7', color: '#d97706', value: fmtMoney(totalHHNN), label: 'HHNN Previstos' },
         { icon: 'fas fa-stopwatch', bg: '#fce7f3', color: '#db2777', value: avgDiasEnFase + 'd', label: 'Media días en fase' },
         { icon: 'fas fa-tachometer-alt', bg: '#d1fae5', color: '#059669', value: avgDiasHasta !== '-' ? avgDiasHasta + 'd' : '-', label: 'Captada → Fase (media)' },
         { icon: 'fas fa-exclamation-triangle', bg: '#fee2e2', color: '#dc2626', value: opsAlerta, label: '>15 días en fase' },
