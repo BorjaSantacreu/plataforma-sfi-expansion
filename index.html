@@ -1408,12 +1408,12 @@ function loadDB() {
     initSupabaseIfConfigured();
 }
 
-function saveDB(key) {
+function saveDB(key, record) {
     // Always save to localStorage (instant, offline fallback)
     if (key) { localStorage.setItem(STORAGE_KEYS[key], JSON.stringify(DB[key])); }
     else { Object.keys(STORAGE_KEYS).forEach(k => localStorage.setItem(STORAGE_KEYS[k], JSON.stringify(DB[k]))); }
-    // If Supabase connected, sync async
-    if (SB_CONNECTED && SB) { syncToSupabase(key); }
+    // If Supabase connected, sync async (pass specific record if available)
+    if (SB_CONNECTED && SB) { syncToSupabase(key, record); }
 }
 
 // ============================================================
@@ -1440,8 +1440,11 @@ function initSupabaseIfConfigured() {
                 SB_CONNECTED = true;
                 console.log('Supabase connected (' + (res.count||0) + ' suelos en nube)');
                 updateDBStatusUI();
-                // Auto-pull con merge inteligente (nunca sobreescribe)
-                pullFromSupabase(false);
+                // Detectar columnas de cada tabla para filtrar upserts
+                detectTableColumns().then(function() {
+                    // Pull datos de Supabase (fuente de verdad)
+                    pullFromSupabase();
+                });
                 setupRealtime();
             }
         });
@@ -1495,9 +1498,43 @@ function testSupabaseConnection() {
     });
 }
 
+// ---- TABLE COLUMN DETECTION ----
+var SB_TABLE_COLS = {}; // { suelos: ['id','nombre',...], contactos: [...], ... }
+
+function detectTableColumns() {
+    if (!SB) return Promise.resolve();
+    return Promise.all([
+        SB.from('suelos').select('*').limit(1),
+        SB.from('contactos').select('*').limit(1),
+        SB.from('actividades').select('*').limit(1)
+    ]).then(function(results) {
+        ['suelos','contactos','actividades'].forEach(function(table, i) {
+            if (results[i].data && results[i].data.length > 0) {
+                SB_TABLE_COLS[table] = Object.keys(results[i].data[0]);
+                console.log('Columnas ' + table + ': ' + SB_TABLE_COLS[table].length);
+            }
+        });
+    }).catch(function(e) { console.warn('detectTableColumns error:', e); });
+}
+
+function filterToSBColumns(table, row) {
+    var cols = SB_TABLE_COLS[table];
+    if (!cols || !cols.length) return row; // sin info de columnas, enviar todo
+    var filtered = {};
+    cols.forEach(function(k) {
+        if (row[k] !== undefined) filtered[k] = row[k];
+    });
+    return filtered;
+}
+
 // ---- SYNC TO SUPABASE ----
-function syncToSupabase(key) {
+function syncToSupabase(key, record) {
     if (!SB || !SB_CONNECTED) return;
+    // Si se pasa un registro concreto, solo upsert ese (mucho mas rapido)
+    if (record && record.id && (key === 'suelos' || key === 'contactos' || key === 'actividades')) {
+        upsertTable(key, [record]);
+        return;
+    }
     if (key === 'suelos' || !key) { upsertTable('suelos', DB.suelos); }
     if (key === 'contactos' || !key) { upsertTable('contactos', DB.contactos); }
     if (key === 'actividades' || !key) { upsertTable('actividades', DB.actividades); }
@@ -1511,9 +1548,15 @@ function syncToSupabase(key) {
 
 function upsertTable(table, rows) {
     if (!rows || !rows.length) return;
-    SB.from(table).upsert(rows, { onConflict: 'id' }).then(function(res) {
-        if (res.error) console.warn('Sync ' + table + ' error:', res.error.message);
-        else console.log('Synced ' + table + ': ' + rows.length + ' rows');
+    // Filtrar a solo columnas existentes en Supabase para evitar errores 400
+    var cleanRows = rows.map(function(r) { return filterToSBColumns(table, r); });
+    SB.from(table).upsert(cleanRows, { onConflict: 'id' }).then(function(res) {
+        if (res.error) {
+            console.warn('Sync ' + table + ' error:', res.error.message);
+            showToast('Error sincronizando ' + table + ': ' + res.error.message, 'error');
+        } else {
+            console.log('Synced ' + table + ': ' + cleanRows.length + ' rows');
+        }
     });
 }
 
@@ -1579,6 +1622,7 @@ function pullFromSupabase() {
 
         localStorage.setItem('sfi_last_sync', new Date().toISOString());
         addLog('\nSync completado: ' + new Date().toLocaleString('es-ES'));
+        if (typeof ensurePorNegocio === 'function') ensurePorNegocio();
         recalcAllScores();
         generateAlerts();
         updateDBStatusUI();
@@ -1928,8 +1972,10 @@ function handleGoogleMapsInput(inputId, latFieldId, lngFieldId) {
 // ============================================================
 function calculateScore(suelo) {
     var negocio = suelo.negocio || 'Cooperativa';
-    var pesosNeg = DB.scoring.porNegocio[negocio] || DB.scoring.porNegocio['Cooperativa'] || {};
-    var rangos = (DB.scoring.rangosPorNegocio && DB.scoring.rangosPorNegocio[negocio]) || {};
+    var porNeg = DB.scoring.porNegocio || {};
+    var pesosNeg = porNeg[negocio] || porNeg['Cooperativa'] || {};
+    var rangosNeg = DB.scoring.rangosPorNegocio || {};
+    var rangos = rangosNeg[negocio] || {};
     var weights = {};
     SCORING_CRITERIOS.forEach(function(cr) { weights[cr.id] = (pesosNeg[cr.id] || 0) / 100; });
 
@@ -2312,7 +2358,7 @@ function saveSuelo() {
     suelo.score_desglose = sc.desglose;
 
     DB.suelos.push(suelo);
-    saveDB('suelos');
+    saveDB('suelos', suelo);
     generateAlerts();
     checkScoreAlert(suelo);
     closeModal('modalNuevoSuelo');
@@ -2887,8 +2933,7 @@ function saveDetalleEdit(id) {
         s.score_total = sc.total;
         s.score_desglose = sc.desglose;
     }
-    saveDB('suelos');
-    syncToSupabase('suelos', s);
+    saveDB('suelos', s);
     // Refresh the modal
     showDetalle(id);
     // Refresh table behind
@@ -2931,7 +2976,7 @@ function confirmAddContactoToSuelo(sueloId) {
     // Keep contacto_id in sync (first contact)
     if (!s.contacto_id) s.contacto_id = cid;
     s.fecha_ultimo_cambio = now;
-    saveDB('suelos');
+    saveDB('suelos', s);
     showDetalle(sueloId);
     showToast('Contacto vinculado correctamente', 'success');
 }
@@ -2943,7 +2988,7 @@ function removeContactoFromSuelo(sueloId, contactoId) {
     // Update contacto_id to first remaining
     s.contacto_id = s.contactos.length > 0 ? s.contactos[0].contacto_id : '';
     s.fecha_ultimo_cambio = new Date().toISOString();
-    saveDB('suelos');
+    saveDB('suelos', s);
     showDetalle(sueloId);
     showToast('Contacto desvinculado', 'info');
 }
@@ -4268,6 +4313,7 @@ function importData() {
             });
             saveDB('contactos');
         }
+        if (typeof ensurePorNegocio === 'function') ensurePorNegocio();
         recalcAllScores();
         saveDB('suelos');
         localStorage.setItem('sfi_import_hash', importHash);
@@ -5328,7 +5374,7 @@ function setEstado(suelo, nuevoEstado) {
         fecha: new Date().toISOString(), proximos_pasos: '',
         created_at: new Date().toISOString()
     });
-    saveDB('suelos');
+    saveDB('suelos', suelo);
     saveDB('actividades');
     generateAlerts();
 }
@@ -5507,7 +5553,7 @@ function saveScoringEditor(id) {
 
     s.score_total = total;
     s.score_manual = hasManual;
-    saveDB('suelos');
+    saveDB('suelos', s);
     closeModal('modalScoringEditor');
     showDetalle(id);
 }
