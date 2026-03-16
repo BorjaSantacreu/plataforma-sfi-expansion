@@ -615,20 +615,20 @@ body.visor-mode select[onchange*="changePipelineEstado"] { pointer-events: none;
         <div class="role-grid">
             <div class="role-card" onclick="selectRole(this,'analista')" data-role="analista">
                 <div class="role-icon" style="background:var(--accent);"><i class="fas fa-search"></i></div>
-                <div class="role-info"><h3>Analista de Expansión</h3><p>Captación, análisis y scoring de oportunidades</p></div>
+                <div class="role-info"><h3>Analista de Expansión</h3></div>
             </div>
             <div class="role-card" onclick="selectRole(this,'directora')" data-role="directora">
                 <div class="role-icon" style="background:var(--warning);"><i class="fas fa-user-tie"></i></div>
-                <div class="role-info"><h3>Directora de Expansión</h3><p>Aprobación, pipeline y gestión de equipo</p></div>
+                <div class="role-info"><h3>Directora de Expansión</h3></div>
             </div>
             <div class="role-card" onclick="selectRole(this,'ceo')" data-role="ceo">
                 <div class="role-icon" style="background:#8b5cf6;"><i class="fas fa-crown"></i></div>
-                <div class="role-info"><h3>CEO / Comité Directivo</h3><p>Visión estratégica, aprobación final e informes</p></div>
+                <div class="role-info"><h3>CEO / Comité Directivo</h3></div>
             </div>
             <div style="border-top:1px solid #e2e8f0;margin:8px 0;"></div>
             <div class="role-card" onclick="selectRole(this,'visor')" data-role="visor" style="border-color:#C4A55A;border-style:dashed;">
                 <div class="role-icon" style="background:#C4A55A;"><i class="fas fa-eye"></i></div>
-                <div class="role-info"><h3>Visor IMPULSA</h3><p>Acceso de lectura al pipeline IMPULSA</p></div>
+                <div class="role-info"><h3>Visor IMPULSA</h3></div>
             </div>
         </div>
         <div id="loginPassWrap" style="display:none;margin-bottom:16px;">
@@ -6353,11 +6353,12 @@ const DEFAULT_PASS = 'SFI2026';
 let currentRole = localStorage.getItem('sfi_role') || '';
 
 function getPasswords() {
+    var defaults = { analista: DEFAULT_PASS, directora: DEFAULT_PASS, ceo: DEFAULT_PASS, visor: 'IMPULSA2026' };
     try {
         const stored = localStorage.getItem('sfi_passwords');
-        if (stored) return JSON.parse(stored);
+        if (stored) return Object.assign(defaults, JSON.parse(stored));
     } catch(e) {}
-    return { analista: DEFAULT_PASS, directora: DEFAULT_PASS, ceo: DEFAULT_PASS, visor: DEFAULT_PASS };
+    return defaults;
 }
 
 function savePasswords(pw) {
