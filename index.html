@@ -646,6 +646,11 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         </div>
     </div>
     <span class="subtitle" style="border-left:1px solid rgba(255,255,255,.3);padding-left:12px;">Plataforma de Expansión</span>
+    <div id="globalImpulsaFilter" style="display:flex;gap:4px;margin-left:16px;align-items:center;">
+        <button class="gf-btn gf-active" data-gf="all" onclick="setGlobalFilter('all')" style="font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(196,165,90,.9);color:#fff;cursor:pointer;font-weight:600;transition:all .2s;">SFI + IMPULSA</button>
+        <button class="gf-btn" data-gf="sfi" onclick="setGlobalFilter('sfi')" style="font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-weight:500;transition:all .2s;">SFI</button>
+        <button class="gf-btn" data-gf="impulsa" onclick="setGlobalFilter('impulsa')" style="font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid rgba(196,165,90,.6);background:transparent;color:rgba(196,165,90,.9);cursor:pointer;font-weight:500;transition:all .2s;">IMPULSA</button>
+    </div>
     <button class="hamburger-btn" onclick="toggleSidebar()" style="display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;margin-right:8px;"><i class="fas fa-bars"></i></button><div class="header-right">
         <div class="global-search-wrapper">
             <i class="fas fa-search global-search-icon"></i>
@@ -679,6 +684,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
     <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div>
     <div class="nav-item" data-page="pipeline" onclick="navigateTo('pipeline')"><i class="fas fa-columns"></i> Pipeline</div>
     <div class="nav-item" data-page="mapa" onclick="navigateTo('mapa')"><i class="fas fa-map-marked-alt"></i> Mapa</div>
+    <div class="nav-item" data-page="impulsa" onclick="navigateTo('impulsa')" style="margin-top:4px;"><i class="fas fa-rocket" style="color:#C4A55A;"></i> <span style="font-weight:600;">IMPULSA</span></div>
     <div class="nav-section">Gestión</div>
     <div class="nav-item" data-page="suelos" onclick="navigateTo('suelos')"><i class="fas fa-layer-group"></i> Suelos</div>
     <div class="nav-item" data-page="contactos" onclick="navigateTo('contactos')"><i class="fas fa-address-book"></i> Contactos</div>
@@ -1120,6 +1126,48 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
     <div id="leafletMap" style="height:calc(100vh - 240px);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);"></div>
 </div>
 
+
+<!-- ===== PAGE: IMPULSA ===== -->
+<div id="page-impulsa" class="page">
+    <div style="display:flex;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-rocket" style="font-size:24px;color:#C4A55A;"></i>
+            <div>
+                <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin:0;">Pipeline IMPULSA</h2>
+                <p style="font-size:11px;color:var(--text-light);margin:0;">Oportunidades gestionadas bajo la línea IMPULSA</p>
+            </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="exportImpulsaExcel()" style="margin-left:auto;font-size:11px;"><i class="fas fa-download"></i> Excel</button>
+    </div>
+
+    <div class="kpi-grid" id="impulsaKPIs"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+        <div class="card">
+            <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;margin:0;">Pipeline IMPULSA por Estado</h2></div>
+            <div class="card-body" style="height:220px;"><canvas id="chartImpulsaPipeline"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;margin:0;">HHNN IMPULSA por Negocio</h2></div>
+            <div class="card-body" id="impulsaHHNNSummary"></div>
+        </div>
+    </div>
+
+    <div class="card mt-16">
+        <div class="card-header" style="padding:10px 16px;display:flex;align-items:center;">
+            <h2 style="font-size:13px;margin:0;">Oportunidades IMPULSA</h2>
+            <span id="impulsaCount" style="margin-left:8px;font-size:11px;color:var(--text-light);"></span>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-responsive" id="impulsaTable"></div>
+        </div>
+    </div>
+
+    <div class="card mt-16">
+        <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;margin:0;">Comparativa SFI vs IMPULSA</h2></div>
+        <div class="card-body" id="impulsaComparativa"></div>
+    </div>
+</div>
 
 <!-- ===== PAGE: PLANTILLA CONFIG ===== -->
 <div id="page-plantilla" class="page">
@@ -2006,6 +2054,7 @@ function navigateTo(page) {
     if (page === 'dashboard') renderDashboard();
     if (page === 'pipeline') renderPipeline();
     if (page === 'mapa') renderMapa();
+    if (page === 'impulsa') renderImpulsa();
     if (page === 'scoring') renderScoring();
     if (page === 'alertas') renderAlertas();
     if (page === 'suelos') renderSuelosTable();
@@ -2819,7 +2868,7 @@ function calcHHNN(suelo) {
 
 function populateExcelFilterDropdown(field) {
     const counts = {};
-    DB.suelos.forEach(s => {
+    getFilteredSuelos().forEach(s => {
         let val;
         if (field === 'score') {
             const sc = s.score_total;
@@ -2938,7 +2987,7 @@ function renderSuelosTable() {
     renderSavedFiltersBar();
     const search = (document.getElementById('suelosSearch')?.value || '').toLowerCase();
 
-    let data = DB.suelos.filter(s => {
+    let data = getFilteredSuelos().filter(s => {
         // Text search
         const ms = !search || s.nombre.toLowerCase().includes(search) || s.ciudad.toLowerCase().includes(search)
             || (s.provincia||'').toLowerCase().includes(search) || (s.direccion||'').toLowerCase().includes(search)
@@ -3632,7 +3681,7 @@ function openComparativa() {
 function renderKanban() {
     const board = document.getElementById('pipelineKanban');
     board.innerHTML = PIPELINE_ESTADOS.map(estado => {
-        const ops = DB.suelos.filter(s => s.pipeline_estado === estado.id && (!_kanbanVerticalFilter || (s.vertical||'') === _kanbanVerticalFilter)).sort((a,b) => b.score_total - a.score_total);
+        const ops = getFilteredSuelos().filter(s => s.pipeline_estado === estado.id && (!_kanbanVerticalFilter || (s.vertical||'') === _kanbanVerticalFilter)).sort((a,b) => b.score_total - a.score_total);
         // Group by vertical
         const byVertical = {};
         ops.forEach(s => {
@@ -3688,7 +3737,7 @@ function renderPipelineTable() {
     const dateFrom = document.getElementById('pipeDateFrom')?.value || '';
     const dateTo = document.getElementById('pipeDateTo')?.value || '';
 
-    let allData = [...DB.suelos];
+    let allData = [...getFilteredSuelos()];
 
     // Populate filters
 
@@ -3966,7 +4015,7 @@ function renderScoringPreview() {
             return '<button class="btn" style="border:none;border-bottom:2px solid '+(active?'var(--accent)':'transparent')+';border-radius:0;padding:6px 12px;font-size:12px;font-weight:'+(active?'700':'400')+';color:'+(active?'var(--accent)':'var(--text-light)')+';background:none;cursor:pointer;" onclick="switchPreviewTab(\''+n+'\')">'+n+'</button>';
         }).join('');
     }
-    var filtered = _previewActiveNeg === 'Todos' ? DB.suelos : DB.suelos.filter(function(s){ return (s.negocio||'Cooperativa') === _previewActiveNeg; });
+    var filtered = _previewActiveNeg === 'Todos' ? getFilteredSuelos() : getFilteredSuelos().filter(function(s){ return (s.negocio||'Cooperativa') === _previewActiveNeg; });
     var preview = filtered.sort(function(a,b){ return b.score_total - a.score_total; }).slice(0, 10);
     document.getElementById('scoringPreview').innerHTML = preview.length ?
         '<table class="data-table"><thead><tr><th>Pos</th><th>Nombre</th><th>Ciudad</th><th>Negocio</th><th>Score</th><th>Desglose</th></tr></thead><tbody>' +
@@ -4022,7 +4071,7 @@ function renderFunnel() {
     var invs = {};
     var negocios = {};
     funnelStates.forEach(function(st) { counts[st] = 0; invs[st] = 0; });
-    var funnelSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var funnelSrc = _filteredDashSuelos.length ? _filteredDashSuelos : getFilteredSuelos();
     funnelSrc.forEach(function(s) {
         var st = s.pipeline_estado;
         if (counts[st] !== undefined) {
@@ -4118,7 +4167,7 @@ function renderConversionChart() {
         var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
         months[key] = { captadas: 0, aF0: 0, aF1: 0, ganadas: 0 };
     }
-    var convSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var convSrc = _filteredDashSuelos.length ? _filteredDashSuelos : getFilteredSuelos();
     convSrc.forEach(function(s) {
         // Count captadas by fecha_captacion month
         if (s.fecha_captacion) {
@@ -4175,7 +4224,7 @@ function exportHHNNExcel() {
         var row = { Negocio: n };
         var totalHHNN = 0, totalOps = 0;
         fases.forEach(function(f, i) {
-            var ops = DB.suelos.filter(function(s) { return (s.negocio || 'Sin definir') === n && s.pipeline_estado === f; });
+            var ops = getFilteredSuelos().filter(function(s) { return (s.negocio || 'Sin definir') === n && s.pipeline_estado === f; });
             var hhnn = ops.reduce(function(s, o) { return s + (calcHHNN(o) || 0); }, 0);
             row[fasesShort[i] + ' (HHNN)'] = Math.round(hhnn);
             row[fasesShort[i] + ' (Ops)'] = ops.length;
@@ -4190,7 +4239,7 @@ function exportHHNNExcel() {
     var totalRow = { Negocio: 'TOTAL' };
     var grandHHNN = 0, grandOps = 0;
     fases.forEach(function(f, i) {
-        var ops = DB.suelos.filter(function(s) { return s.pipeline_estado === f; });
+        var ops = getFilteredSuelos().filter(function(s) { return s.pipeline_estado === f; });
         var hhnn = ops.reduce(function(s, o) { return s + (calcHHNN(o) || 0); }, 0);
         totalRow[fasesShort[i] + ' (HHNN)'] = Math.round(hhnn);
         totalRow[fasesShort[i] + ' (Ops)'] = ops.length;
@@ -4226,7 +4275,7 @@ function renderHHNNTable() {
         fases.forEach(function(f) { data[n][f.id] = { count: 0, hhnn: 0 }; });
         data[n]._total = { count: 0, hhnn: 0 };
     });
-    var hhnnSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var hhnnSrc = _filteredDashSuelos.length ? _filteredDashSuelos : getFilteredSuelos();
     hhnnSrc.forEach(function(s) {
         var neg = s.negocio || 'Sin definir';
         if (!data[neg]) { neg = 'Sin definir'; }
@@ -4295,7 +4344,8 @@ function setDashNegFilter(neg) {
 
 var _filteredDashSuelos = [];
 function renderDashboard() {
-    var filteredSuelos = _dashNegFilter === 'Todos' ? DB.suelos : DB.suelos.filter(function(s) { return (s.negocio || 'Cooperativa') === _dashNegFilter; });
+    var baseSuelos = getFilteredSuelos();
+    var filteredSuelos = _dashNegFilter === 'Todos' ? baseSuelos : baseSuelos.filter(function(s) { return (s.negocio || 'Cooperativa') === _dashNegFilter; });
     _filteredDashSuelos = filteredSuelos;
     const total = filteredSuelos.length;
 
@@ -4303,18 +4353,18 @@ function renderDashboard() {
     var filterEl = document.getElementById('dashNegocioFilter');
     if (filterEl) {
         var negCounts = {};
-        DB.suelos.forEach(function(s) { var n = s.negocio || 'Cooperativa'; negCounts[n] = (negCounts[n]||0) + 1; });
+        baseSuelos.forEach(function(s) { var n = s.negocio || 'Cooperativa'; negCounts[n] = (negCounts[n]||0) + 1; });
         filterEl.innerHTML = ['Todos'].concat(NEGOCIO_TYPES).map(function(n) {
-            var count = n === 'Todos' ? DB.suelos.length : (negCounts[n]||0);
+            var count = n === 'Todos' ? baseSuelos.length : (negCounts[n]||0);
             var cls = n === _dashNegFilter ? 'btn btn-sm' : 'btn btn-outline btn-sm';
             if (n !== 'Todos' && count === 0) return '';
             return '<button class="'+cls+'" data-neg="'+n+'" onclick="setDashNegFilter(\''+n+'\')" style="font-size:11px;padding:4px 10px;">'+n+' <span style="opacity:0.6;font-size:10px;">('+count+')</span></button>';
         }).join('');
     }
 
-    const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
-    const invTotal = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').reduce((sum, s) => sum + (s.inversion_estimada || 0), 0);
-    const scoreAvg = total ? Math.round(DB.suelos.reduce((sum, s) => sum + s.score_total, 0) / total) : 0;
+    const activas = filteredSuelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
+    const invTotal = filteredSuelos.filter(s => s.pipeline_estado !== 'Descartada').reduce((sum, s) => sum + (s.inversion_estimada || 0), 0);
+    const scoreAvg = total ? Math.round(filteredSuelos.reduce((sum, s) => sum + s.score_total, 0) / total) : 0;
     const alertasCount = DB.alertas.filter(a => !a.leida).length;
     const actCount = DB.actividades.length;
 
@@ -4391,7 +4441,7 @@ function renderDashCharts() {
     if (chartMensual) chartMensual.destroy();
     if (window._chartScore) window._chartScore.destroy();
 
-    var src = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var src = _filteredDashSuelos.length ? _filteredDashSuelos : getFilteredSuelos();
     var activos = src.filter(s => s.pipeline_estado !== 'Descartada');
 
     // 1. Pipeline bar chart (compact)
@@ -4503,7 +4553,7 @@ function renderNegocioSummary(activos) {
 function renderDashVelocity() {
     var el = document.getElementById('dashVelocityPanel');
     if (!el) return;
-    var velSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var velSrc = _filteredDashSuelos.length ? _filteredDashSuelos : getFilteredSuelos();
     var activos = velSrc.filter(s => s.pipeline_estado !== 'Descartada');
 
     // Funnel: conversion rates between stages
@@ -4535,7 +4585,7 @@ function renderDashVelocity() {
     // Avg days in each active phase
     var avgInPhase = {};
     ['Captada','Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo'].forEach(function(fase) {
-        var ops = DB.suelos.filter(s => s.pipeline_estado === fase);
+        var ops = velSrc.filter(s => s.pipeline_estado === fase);
         var dias = ops.map(s => diasEnFaseActual(s));
         avgInPhase[fase] = dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null;
     });
@@ -4582,7 +4632,7 @@ function renderDashVelocity() {
     html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
     html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 0;font-weight:600;">Fase</td><td style="text-align:right;">Ops actuales</td><td style="text-align:right;">Media días en fase</td><td style="text-align:right;">Captada→Fase</td></tr>';
     ['Captada','Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo'].forEach(function(f) {
-        var ops = DB.suelos.filter(s => s.pipeline_estado === f);
+        var ops = velSrc.filter(s => s.pipeline_estado === f);
         var avg = avgInPhase[f];
         var vel = velocities[f];
         var avgColor = avg !== null ? (avg > 20 ? '#ef4444' : avg > 10 ? '#f59e0b' : '#10b981') : '#94a3b8';
@@ -4596,7 +4646,7 @@ function renderDashVelocity() {
     html += '</table>';
 
     // Overall pipeline velocity: avg time from Captada to Ganada
-    var ganadaDias = DB.suelos.filter(s => s.pipeline_estado === 'Ganada').map(s => diasHastaFase(s,'Ganada')).filter(d => d !== null);
+    var ganadaDias = velSrc.filter(s => s.pipeline_estado === 'Ganada').map(s => diasHastaFase(s,'Ganada')).filter(d => d !== null);
     var avgGanada = ganadaDias.length ? Math.round(ganadaDias.reduce((a,b)=>a+b,0)/ganadaDias.length) : null;
     html += '<div style="margin-top:10px;padding:8px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;">';
     html += '<span style="font-size:11px;color:#166534;font-weight:600;">Captada → Ganada: '+(avgGanada !== null ? '<strong>'+avgGanada+' días</strong> (media de '+ganadaDias.length+' ops)' : 'sin datos aún')+'</span>';
@@ -4642,7 +4692,8 @@ function renderMapa() {
     var matchCount = 0;
     var totalGeo = 0;
 
-    DB.suelos.forEach(s => {
+    var mapSrc = getFilteredSuelos();
+    mapSrc.forEach(s => {
         if (!s.latitud || !s.longitud) return;
         totalGeo++;
 
@@ -4688,12 +4739,13 @@ function renderMapa() {
 // INFORMES
 // ============================================================
 function generarInformeComiteSuelo() {
-    const activas = DB.suelos.filter(s => !['Descartada','Ganada','Vendida'].includes(s.pipeline_estado));
+    const _src = getFilteredSuelos();
+    const activas = _src.filter(s => !['Descartada','Ganada','Vendida'].includes(s.pipeline_estado));
     const top = [...activas].sort((a,b) => b.score_total - a.score_total).slice(0, 10);
-    const ganadas = DB.suelos.filter(s => s.pipeline_estado === 'Ganada');
-    const descartadas = DB.suelos.filter(s => s.pipeline_estado === 'Descartada');
-    const fase0 = DB.suelos.filter(s => s.pipeline_estado.includes('Fase 0'));
-    const fase1 = DB.suelos.filter(s => s.pipeline_estado.includes('Fase 1'));
+    const ganadas = _src.filter(s => s.pipeline_estado === 'Ganada');
+    const descartadas = _src.filter(s => s.pipeline_estado === 'Descartada');
+    const fase0 = _src.filter(s => s.pipeline_estado.includes('Fase 0'));
+    const fase1 = _src.filter(s => s.pipeline_estado.includes('Fase 1'));
     const invActivas = activas.reduce((s,o) => s + (o.inversion_estimada||0), 0);
     const vivActivas = activas.reduce((s,o) => s + (o.num_viviendas||0), 0);
     const stagnated = activas.filter(s => daysSince(s.fecha_captacion) > 30);
@@ -4701,7 +4753,7 @@ function generarInformeComiteSuelo() {
 
     // New ops this month
     const now = new Date();
-    const thisMonth = DB.suelos.filter(s => {
+    const thisMonth = _src.filter(s => {
         const d = new Date(s.fecha_captacion);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
@@ -4725,7 +4777,7 @@ function generarInformeComiteSuelo() {
     html += '<h4 style="margin:20px 0 10px;color:var(--primary);"><i class="fas fa-chart-bar" style="color:var(--gold);"></i> Desglose del Pipeline</h4>';
     html += '<table class="data-table"><thead><tr><th>Fase</th><th>Nº Ops</th><th>Viviendas</th><th>Inversión</th><th>Score Medio</th></tr></thead><tbody>';
     PIPELINE_ESTADOS.forEach(e => {
-        const ops = DB.suelos.filter(s => s.pipeline_estado === e.id);
+        const ops = _src.filter(s => s.pipeline_estado === e.id);
         if (!ops.length) return;
         const inv = ops.reduce((s,o) => s + (o.inversion_estimada||0), 0);
         const viv = ops.reduce((s,o) => s + (o.num_viviendas||0), 0);
@@ -4773,10 +4825,11 @@ function generarInformeComiteSuelo() {
 }
 
 function generarInformeDirectivo() {
-    const activas = DB.suelos.filter(s => !['Descartada'].includes(s.pipeline_estado));
+    const _src2 = getFilteredSuelos();
+    const activas = _src2.filter(s => !['Descartada'].includes(s.pipeline_estado));
     const invTotal = activas.reduce((s, o) => s + (o.inversion_estimada || 0), 0);
     const vivTotal = activas.reduce((s, o) => s + (o.num_viviendas || 0), 0);
-    const compras = DB.suelos.filter(s => s.pipeline_estado === 'Ganada');
+    const compras = _src2.filter(s => s.pipeline_estado === 'Ganada');
     const top = [...activas].sort((a,b) => b.score_total - a.score_total).slice(0, 10);
     const byProv = {};
     activas.forEach(s => { const p = s.provincia || 'Sin provincia'; byProv[p] = (byProv[p]||0) + 1; });
@@ -4799,7 +4852,7 @@ function generarInformeDirectivo() {
     html += '<h4 style="margin:20px 0 10px;color:var(--primary);"><i class="fas fa-chart-bar" style="color:var(--gold);"></i> Pipeline por Fases</h4>';
     html += '<table class="data-table"><thead><tr><th>Fase</th><th>Nº Ops</th><th>Viviendas</th><th>Inversión</th></tr></thead><tbody>';
     PIPELINE_ESTADOS.forEach(e => {
-        const ops = DB.suelos.filter(s => s.pipeline_estado === e.id);
+        const ops = _src2.filter(s => s.pipeline_estado === e.id);
         if (!ops.length) return;
         const inv = ops.reduce((s, o) => s + (o.inversion_estimada || 0), 0);
         const viv = ops.reduce((s, o) => s + (o.num_viviendas || 0), 0);
@@ -4852,7 +4905,7 @@ function printInforme() {
 // EXPORT
 // ============================================================
 function exportSuelosExcel() {
-    const data = DB.suelos.map(s => {
+    const data = getFilteredSuelos().map(s => {
         const pa = getPendingApprover(s);
         const la = getLastActivity(s.id);
         const hhnn = calcHHNN(s);
@@ -4888,7 +4941,7 @@ function exportSuelosExcel() {
 // PIPELINE EXCEL EXPORT
 // ============================================================
 function exportPipelineExcel() {
-    const data = DB.suelos.map(s => {
+    const data = getFilteredSuelos().map(s => {
         const pa = getPendingApprover(s);
         const la = getLastActivity(s.id);
         return {
@@ -5057,10 +5110,10 @@ function gfToggle(tableId, field, btnEl) {
 function gfLazyPopulate(tableId, field) {
     // Get data source based on tableId
     let data = [];
-    if (tableId === 'fase0') data = DB.suelos.filter(s => s.pipeline_estado === 'Fase 0 - Análisis Preliminar');
-    else if (tableId === 'fase1') data = DB.suelos.filter(s => s.pipeline_estado === 'Fase 1: Compra del suelo');
-    else if (tableId === 'seg') data = DB.suelos.filter(s => s.pipeline_estado === 'Seguimiento');
-    else if (tableId === 'pipe') data = [...DB.suelos];
+    if (tableId === 'fase0') data = getFilteredSuelos().filter(s => s.pipeline_estado === 'Fase 0 - Análisis Preliminar');
+    else if (tableId === 'fase1') data = getFilteredSuelos().filter(s => s.pipeline_estado === 'Fase 1: Compra del suelo');
+    else if (tableId === 'seg') data = getFilteredSuelos().filter(s => s.pipeline_estado === 'Seguimiento');
+    else if (tableId === 'pipe') data = [...getFilteredSuelos()];
     else if (tableId === 'cont') data = [...DB.contactos];
     else return;
 
@@ -5224,7 +5277,7 @@ function renderFase(num) {
     // Init generic filters
     gfInit(tableId, ['ciudad','tipologia','vertical','negocio','responsable','score_range']);
 
-    let allOps = DB.suelos.filter(s => s.pipeline_estado === faseId);
+    let allOps = getFilteredSuelos().filter(s => s.pipeline_estado === faseId);
 
     // Populate generic filter dropdowns with ALL data for this fase
 
@@ -5378,7 +5431,7 @@ function renderSeguimiento() {
     gfInit(tableId, ['ciudad','tipologia','vertical','negocio','responsable','score_range']);
 
     const searchVal = (document.getElementById('seguimientoSearch')?.value || '').toLowerCase();
-    let allOps = DB.suelos.filter(s => s.pipeline_estado === 'Seguimiento');
+    let allOps = getFilteredSuelos().filter(s => s.pipeline_estado === 'Seguimiento');
 
     // Populate filters
 
@@ -6630,11 +6683,12 @@ function exportInformeComite() {
         y = 38;
 
         // KPIs
-        var total = DB.suelos.length;
-        var activas = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).length;
-        var invTotal = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
-        var scoreAvg = total ? Math.round(DB.suelos.reduce(function(sum,s){return sum+s.score_total;},0)/total) : 0;
-        var ganadas = DB.suelos.filter(function(s){return s.pipeline_estado==='Ganada'||s.pipeline_estado==='Vendida'||s.pipeline_estado==='Seguimiento';}).length;
+        var _pdfSrc = getFilteredSuelos();
+        var total = _pdfSrc.length;
+        var activas = _pdfSrc.filter(function(s){return s.pipeline_estado!=='Descartada';}).length;
+        var invTotal = _pdfSrc.filter(function(s){return s.pipeline_estado!=='Descartada';}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
+        var scoreAvg = total ? Math.round(_pdfSrc.reduce(function(sum,s){return sum+s.score_total;},0)/total) : 0;
+        var ganadas = _pdfSrc.filter(function(s){return s.pipeline_estado==='Ganada'||s.pipeline_estado==='Vendida'||s.pipeline_estado==='Seguimiento';}).length;
 
         doc.setTextColor(74, 74, 74);
         doc.setFontSize(12);
@@ -6673,14 +6727,14 @@ function exportInformeComite() {
         y += 4;
         var funnelStates = ['Captada', 'Fase 0 - Análisis Preliminar', 'Fase 1: Compra del suelo', 'Ganada'];
         var funnelData = funnelStates.map(function(st, i) {
-            var count = DB.suelos.filter(function(s) {
+            var count = _pdfSrc.filter(function(s) {
                 var sIdx = funnelStates.indexOf(s.pipeline_estado);
                 if (sIdx >= i) return true;
                 if (i <= 3 && (s.pipeline_estado === 'Vendida' || s.pipeline_estado === 'Seguimiento')) return true;
                 if (s.pipeline_estado === 'Descartada' && s.fechas_fase && s.fechas_fase[st]) return true;
                 return false;
             }).length;
-            var inv = DB.suelos.filter(function(s){return s.pipeline_estado === st;}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
+            var inv = _pdfSrc.filter(function(s){return s.pipeline_estado === st;}).reduce(function(sum,s){return sum+(s.inversion_estimada||0);},0);
             return [st.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1'), count, fmtMoney(inv)];
         });
         doc.autoTable({
@@ -6700,7 +6754,7 @@ function exportInformeComite() {
         doc.setTextColor(74, 74, 74);
         doc.text('Top 10 Operaciones por Score', margin, y);
         y += 4;
-        var top10 = DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).sort(function(a,b){return b.score_total-a.score_total;}).slice(0,10);
+        var top10 = _pdfSrc.filter(function(s){return s.pipeline_estado!=='Descartada';}).sort(function(a,b){return b.score_total-a.score_total;}).slice(0,10);
         var topData = top10.map(function(s){
             var dias = daysSince(s.fecha_ultimo_cambio || s.fecha_captacion);
             return [s.nombre.substring(0,25), s.ciudad, (s.negocio||'-').substring(0,12), fmtMoney(s.inversion_estimada), s.score_total, s.pipeline_estado.replace('Fase 0 - Análisis Preliminar','F0').replace('Fase 1: Compra del suelo','F1'), dias+'d'];
@@ -6727,7 +6781,7 @@ function exportInformeComite() {
         doc.text('Desglose por Línea de Negocio', margin, y);
         y += 4;
         var negMap = {};
-        DB.suelos.filter(function(s){return s.pipeline_estado!=='Descartada';}).forEach(function(s){
+        _pdfSrc.filter(function(s){return s.pipeline_estado!=='Descartada';}).forEach(function(s){
             var neg = s.negocio || 'Sin definir';
             if (!negMap[neg]) negMap[neg] = {count:0,inv:0,scoreSum:0,ganadas:0};
             negMap[neg].count++;
@@ -7462,6 +7516,152 @@ function showToast(message, type) {
 // ============================================================
 // INIT
 // ============================================================
+// ============================================================
+// GLOBAL IMPULSA FILTER
+// ============================================================
+var _globalFilter = 'all'; // 'all' | 'sfi' | 'impulsa'
+
+function setGlobalFilter(mode) {
+    _globalFilter = mode;
+    // Update button styles
+    document.querySelectorAll('#globalImpulsaFilter .gf-btn').forEach(function(b) {
+        if (b.getAttribute('data-gf') === mode) {
+            b.style.background = mode === 'impulsa' ? 'rgba(196,165,90,.9)' : 'rgba(196,165,90,.9)';
+            b.style.color = '#fff';
+            b.style.fontWeight = '600';
+        } else {
+            b.style.background = 'transparent';
+            b.style.color = b.getAttribute('data-gf') === 'impulsa' ? 'rgba(196,165,90,.9)' : 'rgba(255,255,255,.7)';
+            b.style.fontWeight = '500';
+        }
+    });
+    // Update subtitle hint
+    var sub = document.querySelector('.subtitle');
+    if (sub) {
+        var labels = { all: 'Plataforma de Expansión', sfi: 'Plataforma de Expansión — SFI', impulsa: 'Plataforma de Expansión — IMPULSA' };
+        sub.textContent = labels[mode];
+    }
+    // Re-render current page
+    var activePage = document.querySelector('.page.active');
+    if (activePage) navigateTo(activePage.id.replace('page-',''));
+}
+
+function getFilteredSuelos() {
+    if (_globalFilter === 'sfi') return DB.suelos.filter(function(s) { return s.impulsa !== 'Sí'; });
+    if (_globalFilter === 'impulsa') return DB.suelos.filter(function(s) { return s.impulsa === 'Sí'; });
+    return DB.suelos;
+}
+
+// ============================================================
+// RENDER IMPULSA PAGE
+// ============================================================
+function renderImpulsa() {
+    var impulsa = DB.suelos.filter(function(s) { return s.impulsa === 'Sí'; });
+    var sfi = DB.suelos.filter(function(s) { return s.impulsa !== 'Sí'; });
+    var total = impulsa.length;
+
+    // KPIs
+    var captadas = impulsa.filter(function(s) { return s.pipeline_estado === 'Captada'; }).length;
+    var f0 = impulsa.filter(function(s) { return s.pipeline_estado === 'Fase 0 - Análisis Preliminar'; }).length;
+    var f1 = impulsa.filter(function(s) { return s.pipeline_estado === 'Fase 1: Compra del suelo'; }).length;
+    var seg = impulsa.filter(function(s) { return s.pipeline_estado === 'Seguimiento'; }).length;
+    var hhnnTotal = impulsa.reduce(function(sum, s) { return sum + (calcHHNN(s) || 0); }, 0);
+
+    document.getElementById('impulsaKPIs').innerHTML = [
+        { icon: 'fas fa-rocket', bg: '#fef3c7', color: '#d97706', value: total, label: 'Total IMPULSA' },
+        { icon: 'fas fa-inbox', bg: '#f3e8ff', color: '#7c3aed', value: captadas, label: 'Captadas' },
+        { icon: 'fas fa-search', bg: '#dbeafe', color: '#1d4ed8', value: f0, label: 'En Fase 0' },
+        { icon: 'fas fa-file-signature', bg: '#d1fae5', color: '#059669', value: f1, label: 'En Fase 1' },
+        { icon: 'fas fa-home', bg: '#e0f2fe', color: '#0284c7', value: fmtMoney(hhnnTotal), label: 'HHNN Est.' },
+    ].map(function(k) { return '<div class="kpi-card"><div class="kpi-icon" style="background:'+k.bg+';color:'+k.color+';"><i class="'+k.icon+'"></i></div><div class="kpi-value">'+k.value+'</div><div class="kpi-label">'+k.label+'</div></div>'; }).join('');
+
+    // Pipeline chart
+    if (window._chartImpulsaPipeline) window._chartImpulsaPipeline.destroy();
+    var canvas = document.getElementById('chartImpulsaPipeline');
+    if (canvas) {
+        var counts = {};
+        PIPELINE_ESTADOS.forEach(function(e) { counts[e.id] = 0; });
+        impulsa.forEach(function(s) { if (counts[s.pipeline_estado] !== undefined) counts[s.pipeline_estado]++; });
+        var labels = Object.keys(counts).map(function(l) { return l.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1'); });
+        window._chartImpulsaPipeline = new Chart(canvas, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ data: Object.values(counts), backgroundColor: PIPELINE_ESTADOS.map(function(e) { return e.color + 'cc'; }), borderWidth: 0, borderRadius: 3 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font:{size:10} } }, x: { ticks: { font:{size:9}, maxRotation:45 } } } }
+        });
+    }
+
+    // HHNN by negocio
+    var hhnnEl = document.getElementById('impulsaHHNNSummary');
+    if (hhnnEl) {
+        var negData = {};
+        impulsa.forEach(function(s) {
+            var n = s.negocio || 'Cooperativa';
+            if (!negData[n]) negData[n] = { count: 0, hhnn: 0 };
+            negData[n].count++;
+            negData[n].hhnn += (calcHHNN(s) || 0);
+        });
+        var rows = '';
+        Object.keys(negData).sort().forEach(function(n) {
+            rows += '<tr><td style="font-weight:600;">'+n+'</td><td style="text-align:center;">'+negData[n].count+'</td><td style="text-align:right;">'+fmtMoney(negData[n].hhnn)+'</td></tr>';
+        });
+        hhnnEl.innerHTML = rows ? '<table class="data-table" style="width:100%;font-size:12px;"><thead><tr><th>Negocio</th><th style="text-align:center;">Ops</th><th style="text-align:right;">HHNN</th></tr></thead><tbody>'+rows+'<tr style="font-weight:700;background:#f1f5f9;"><td>TOTAL</td><td style="text-align:center;">'+total+'</td><td style="text-align:right;">'+fmtMoney(hhnnTotal)+'</td></tr></tbody></table>'
+            : '<p class="text-light" style="font-size:12px;padding:16px;">No hay oportunidades IMPULSA. Marca suelos como IMPULSA desde el detalle.</p>';
+    }
+
+    // Main table
+    document.getElementById('impulsaCount').textContent = '(' + total + ' oportunidades)';
+    var tableEl = document.getElementById('impulsaTable');
+    if (total === 0) {
+        tableEl.innerHTML = '<div style="padding:32px;text-align:center;"><i class="fas fa-rocket" style="font-size:40px;color:var(--gold);opacity:.3;"></i><p style="color:var(--text-light);margin-top:12px;">No hay oportunidades marcadas como IMPULSA.<br>Puedes marcarlas desde el detalle de cada suelo.</p></div>';
+    } else {
+        tableEl.innerHTML = '<table class="data-table" style="width:100%;"><thead><tr><th>Nombre</th><th>Ciudad</th><th>Negocio</th><th>Estado</th><th>Viv.</th><th>m²t</th><th>Score</th><th>HHNN</th><th>Días</th></tr></thead><tbody>' +
+            impulsa.sort(function(a,b) { return b.score_total - a.score_total; }).map(function(s) {
+                var sc = getScoreClass(s.score_total);
+                var dias = daysSince(s.fecha_captacion);
+                var diasColor = dias > 30 ? 'var(--danger)' : dias > 15 ? 'var(--warning)' : 'var(--success)';
+                var shortEstado = s.pipeline_estado.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1');
+                return '<tr onclick="showDetalle(\''+s.id+'\');" style="cursor:pointer;"><td style="font-weight:600;color:var(--primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+s.nombre+'</td><td>'+s.ciudad+'</td><td style="font-size:11px;">'+( s.negocio||'-')+'</td><td style="font-size:11px;">'+shortEstado+'</td><td style="text-align:center;">'+(s.num_viviendas||'-')+'</td><td style="text-align:center;">'+(s.superficie_edificable ? Math.round(s.superficie_edificable).toLocaleString('es-ES') : '-')+'</td><td><span class="score-dot '+sc.class+'"></span>'+s.score_total+'</td><td style="text-align:right;">'+fmtMoney(calcHHNN(s))+'</td><td style="font-weight:600;color:'+diasColor+';">'+dias+'d</td></tr>';
+            }).join('') + '</tbody></table>';
+    }
+
+    // Comparativa SFI vs IMPULSA
+    var compEl = document.getElementById('impulsaComparativa');
+    if (compEl) {
+        var sfiCount = sfi.length;
+        var impCount = impulsa.length;
+        var sfiHHNN = sfi.reduce(function(sum, s) { return sum + (calcHHNN(s) || 0); }, 0);
+        var impHHNN = hhnnTotal;
+        var sfiScore = sfiCount ? Math.round(sfi.reduce(function(sum, s) { return sum + s.score_total; }, 0) / sfiCount) : 0;
+        var impScore = impCount ? Math.round(impulsa.reduce(function(sum, s) { return sum + s.score_total; }, 0) / impCount) : 0;
+        compEl.innerHTML = '<table class="data-table" style="width:100%;font-size:12px;"><thead><tr><th></th><th style="text-align:center;">SFI</th><th style="text-align:center;color:#C4A55A;font-weight:700;">IMPULSA</th><th style="text-align:center;">Total</th></tr></thead><tbody>' +
+            '<tr><td style="font-weight:600;">Oportunidades</td><td style="text-align:center;">'+sfiCount+'</td><td style="text-align:center;font-weight:700;color:#C4A55A;">'+impCount+'</td><td style="text-align:center;font-weight:700;">'+(sfiCount+impCount)+'</td></tr>' +
+            '<tr><td style="font-weight:600;">HHNN Previstos</td><td style="text-align:center;">'+fmtMoney(sfiHHNN)+'</td><td style="text-align:center;font-weight:700;color:#C4A55A;">'+fmtMoney(impHHNN)+'</td><td style="text-align:center;font-weight:700;">'+fmtMoney(sfiHHNN+impHHNN)+'</td></tr>' +
+            '<tr><td style="font-weight:600;">Score Medio</td><td style="text-align:center;">'+sfiScore+'</td><td style="text-align:center;font-weight:700;color:#C4A55A;">'+impScore+'</td><td style="text-align:center;font-weight:700;">'+( (sfiCount+impCount) ? Math.round((sfi.reduce(function(s,o){return s+o.score_total;},0)+impulsa.reduce(function(s,o){return s+o.score_total;},0))/(sfiCount+impCount)) : 0)+'</td></tr>' +
+            '</tbody></table>';
+    }
+}
+
+function exportImpulsaExcel() {
+    var impulsa = DB.suelos.filter(function(s) { return s.impulsa === 'Sí'; });
+    if (!impulsa.length) { showToast('No hay oportunidades IMPULSA', 'warning'); return; }
+    var data = impulsa.map(function(s) {
+        return {
+            'Nombre': s.nombre, 'Ciudad': s.ciudad, 'Provincia': s.provincia,
+            'Negocio': s.negocio || '-', 'Vertical': s.vertical || '-',
+            'Estado': s.pipeline_estado, 'Score': s.score_total,
+            'Viviendas': s.num_viviendas || 0, 'm²t': s.superficie_edificable || 0,
+            'Precio Suelo': s.precio_suelo || 0, 'HHNN': calcHHNN(s) || 0,
+            'Fecha Alta': s.fecha_captacion ? new Date(s.fecha_captacion).toLocaleDateString('es-ES') : '-',
+            'Responsable': s.responsable || '-'
+        };
+    });
+    var ws = XLSX.utils.json_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'IMPULSA');
+    XLSX.writeFile(wb, 'impulsa_pipeline_' + new Date().toISOString().substring(0,10) + '.xlsx');
+    showToast('Excel IMPULSA exportado', 'success');
+}
+
 function init() {
     loadDB();
     importData();
