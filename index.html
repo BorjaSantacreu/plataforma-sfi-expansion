@@ -702,27 +702,34 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 
 <!-- ===== PAGE: DASHBOARD ===== -->
 <div id="page-dashboard" class="page active">
-    <div style="display:flex;align-items:center;margin-bottom:20px;"><h2 style="font-size:20px;font-weight:700;color:var(--primary);margin:0;">Dashboard de Expansión</h2><button class="btn btn-outline btn-sm" onclick="exportInformeComite()" style="margin-left:auto;font-size:11px;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:4px;"></i> Informe Comité</button></div>
+    <div style="display:flex;align-items:center;margin-bottom:12px;"><h2 style="font-size:20px;font-weight:700;color:var(--primary);margin:0;">Dashboard de Expansión</h2><button class="btn btn-outline btn-sm" onclick="exportInformeComite()" style="margin-left:auto;font-size:11px;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:4px;"></i> Informe Comité</button></div>
+    <div id="dashNegocioFilter" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;"></div>
     <div class="kpi-grid" id="dashKPIs"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;" id="dashCharts">
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pipeline por Estado</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartEstados" style="max-height:280px;"></canvas></div></div>
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Evolución Mensual</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartMensual" style="max-height:280px;"></canvas></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">HHNN Previstos por Negocio y Fase</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashHHNNTable"></div></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;display:flex;align-items:center;"><h2 style="font-size:13px;margin:0;">HHNN Previstos por Negocio y Fase</h2><button class="btn btn-outline btn-sm" onclick="exportHHNNExcel()" style="margin-left:auto;font-size:10px;padding:3px 8px;"><i class="fas fa-download"></i> Excel</button></div><div class="card-body" style="padding:8px 12px;"><div id="dashHHNNTable"></div></div></div>
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Distribución Score</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartScoreDist" style="max-height:280px;"></canvas></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;" id="dashCharts2">
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Desglose por Vertical y Estado</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashVerticalMatrix"></div></div></div>
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Resumen por Negocio</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashNegocioSummary"></div></div></div>
     </div>
-    <div class="card" style="margin-top:16px;">
-        <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Velocidad del Pipeline y Conversión</h2></div>
-        <div class="card-body" style="padding:8px 12px;"><div id="dashVelocityPanel"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+        <div class="card">
+            <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Velocidad del Pipeline y Conversión</h2></div>
+            <div class="card-body" style="padding:8px 12px;"><div id="dashVelocityPanel"></div></div>
+        </div>
+        <div class="card">
+            <div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Conversión por Mes (cambios de fase)</h2></div>
+            <div class="card-body" style="padding:12px 16px;"><canvas id="chartConversionMes" style="max-height:220px;"></canvas></div>
+        </div>
     </div>
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Top Oportunidades por Score</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashTopOps"></div></div></div>
-        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pendientes de Aprobación</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashPendientes"></div></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Últimas Oportunidades Captadas</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashUltimasCaptadas"></div></div></div>
     </div>
     <div class="card" style="margin-top:16px;"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Operaciones Estancadas (&gt;30 días sin movimiento)</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashEstancadas"></div></div></div>
     <div id="dashFunnel" class="funnel-container" style="margin-top:16px;"></div>
@@ -1708,7 +1715,7 @@ function migrateLocalToSupabase() {
     function addLog(msg) { if (log) log.innerHTML += msg + '\n'; }
 
     // Column whitelist per table
-    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','fechas_fase','sharepoint_url','created_at'];
+    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','fechas_fase','sharepoint_url','crm_url','created_at'];
     var CONTACTO_COLS = ['id','nombre','empresa','tipo','telefono','email','notas','created_at'];
     var ACTIVIDAD_COLS = ['id','suelo_id','tipo','descripcion','fecha','proximos_pasos','created_at'];
 
@@ -3248,6 +3255,7 @@ function showDetalle(id) {
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RESPONSABLE</label><p class="dv">${s.responsable || '-'}</p><input class="de form-control" data-field="responsable" value="${(s.responsable||'').replace(/"/g,'&quot;')}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">ESTADO PIPELINE</label><p class="dv">${s.pipeline_estado}</p><select class="de form-control" data-field="pipeline_estado" style="display:none;">${PIPELINE_ESTADOS.map(e=>'<option '+(s.pipeline_estado===e.id?'selected':'')+' value="'+e.id+'">'+e.id+'</option>').join('')}</select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">SHAREPOINT URL</label><p class="dv">${s.sharepoint_url ? '<a href="' + s.sharepoint_url + '" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fas fa-folder-open"></i> Abrir documentación</a>' : '<span style="color:var(--text-light);">Sin enlace</span>'}</p><input class="de form-control" data-field="sharepoint_url" value="${(s.sharepoint_url||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="display:none;"></div>
+                <div><label class="text-light" style="font-size:11px;font-weight:700;">ENLACE CRM</label><p class="dv">${s.crm_url ? '<a href="' + s.crm_url + '" target="_blank" style="color:var(--accent);text-decoration:none;"><i class="fas fa-link"></i> Abrir en CRM</a>' : '<span style="color:var(--text-light);">Sin enlace</span>'}</p><input class="de form-control" data-field="crm_url" value="${(s.crm_url||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="display:none;"></div>
             </div>
             <div style="margin-top:12px;"><label class="text-light" style="font-size:11px;font-weight:700;">OBSERVACIONES</label><p class="dv" style="margin-top:4px;background:#f8fafc;padding:12px;border-radius:6px;font-size:13px;line-height:1.5;">${s.observaciones || '<span class=text-light>Sin observaciones</span>'}</p><textarea class="de form-control" data-field="observaciones" rows="3" style="display:none;">${s.observaciones || ''}</textarea></div>
             ${s.latitud && s.longitud ? '<div class="mt-16"><strong class="text-light" style="font-size:11px;">UBICACIÓN</strong><div style="display:flex;gap:8px;margin-top:6px;margin-bottom:8px;"><a href="https://www.google.com/maps?q=' + s.latitud + ',' + s.longitud + '" target="_blank" class="btn btn-outline btn-sm" style="font-size:11px;"><i class="fas fa-map-marked-alt"></i> Ver en Google Maps</a></div><div id="detalleMapContainer" style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border);"></div></div>' : ''}
@@ -3784,6 +3792,7 @@ var DEFAULT_PESOS = {
     'Cooperativa': {ciudad:20, viviendas:20, precio_m2t_mercado:10, superficie:10, rentabilidad:15, ratio:10, inversion:5, riesgo:10},
     'Venta libre': {ciudad:20, viviendas:10, precio_m2t_mercado:10, superficie:10, rentabilidad:20, ratio:15, inversion:5, riesgo:10},
     'Hotel':       {ciudad:25, viviendas:0,  precio_m2t_mercado:10, superficie:15, rentabilidad:20, ratio:10, inversion:10, riesgo:10},
+    'BTR':         {ciudad:20, viviendas:15, precio_m2t_mercado:10, superficie:10, rentabilidad:20, ratio:10, inversion:5, riesgo:10},
     'Otros':       {ciudad:20, viviendas:10, precio_m2t_mercado:10, superficie:10, rentabilidad:15, ratio:15, inversion:10, riesgo:10}
 };
 
@@ -4072,6 +4081,106 @@ function renderFunnel() {
     container.innerHTML = '<div class="funnel-title"><i class="fas fa-filter" style="margin-right:8px;color:var(--gold);"></i>Funnel de Conversión</div>' + barsHtml + negTable;
 }
 
+var chartConvMes;
+function renderConversionChart() {
+    var canvas = document.getElementById('chartConversionMes');
+    if (!canvas) return;
+    // Build data: count phase transitions per month from fechas_fase
+    var months = {};
+    var now = new Date();
+    for (var i = 5; i >= 0; i--) {
+        var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+        months[key] = { captadas: 0, aF0: 0, aF1: 0, ganadas: 0 };
+    }
+    DB.suelos.forEach(function(s) {
+        // Count captadas by fecha_captacion month
+        if (s.fecha_captacion) {
+            var fc = s.fecha_captacion.substring(0, 7);
+            if (months[fc]) months[fc].captadas++;
+        }
+        // Count phase transitions from fechas_fase
+        if (s.fechas_fase) {
+            Object.keys(s.fechas_fase).forEach(function(k) {
+                if (k.endsWith('_salida')) return;
+                var dateStr = s.fechas_fase[k];
+                if (!dateStr) return;
+                var m = dateStr.substring(0, 7);
+                if (!months[m]) return;
+                if (k === 'Fase 0 - Análisis Preliminar') months[m].aF0++;
+                else if (k === 'Fase 1: Compra del suelo') months[m].aF1++;
+                else if (k === 'Ganada') months[m].ganadas++;
+            });
+        }
+    });
+    var labels = Object.keys(months).map(function(k) {
+        var parts = k.split('-');
+        var mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        return mNames[parseInt(parts[1])-1] + ' ' + parts[0].substring(2);
+    });
+    var datasets = [
+        { label: 'Captadas', data: Object.values(months).map(function(v){return v.captadas;}), backgroundColor: '#93c5fd', borderColor: '#3b82f6', borderWidth: 1 },
+        { label: 'A Fase 0', data: Object.values(months).map(function(v){return v.aF0;}), backgroundColor: '#fde68a', borderColor: '#f59e0b', borderWidth: 1 },
+        { label: 'A Fase 1', data: Object.values(months).map(function(v){return v.aF1;}), backgroundColor: '#86efac', borderColor: '#22c55e', borderWidth: 1 },
+        { label: 'Ganadas', data: Object.values(months).map(function(v){return v.ganadas;}), backgroundColor: '#c4b5fd', borderColor: '#8b5cf6', borderWidth: 1 }
+    ];
+    if (chartConvMes) chartConvMes.destroy();
+    chartConvMes = new Chart(canvas, {
+        type: 'bar',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+            scales: {
+                x: { stacked: false, grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+            }
+        }
+    });
+}
+
+function exportHHNNExcel() {
+    var fases = ['Captada','Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo','Ganada','Seguimiento','Vendida','Descartada'];
+    var fasesShort = ['Captada','Fase 0','Fase 1','Ganada','Seguimiento','Vendida','Descartada'];
+    var negocios = ['Cooperativa','Venta libre','Hotel','BTR','Otros','Sin definir'];
+    var data = [];
+    negocios.forEach(function(n) {
+        var row = { Negocio: n };
+        var totalHHNN = 0, totalOps = 0;
+        fases.forEach(function(f, i) {
+            var ops = DB.suelos.filter(function(s) { return (s.negocio || 'Sin definir') === n && s.pipeline_estado === f; });
+            var hhnn = ops.reduce(function(s, o) { return s + (calcHHNN(o) || 0); }, 0);
+            row[fasesShort[i] + ' (HHNN)'] = Math.round(hhnn);
+            row[fasesShort[i] + ' (Ops)'] = ops.length;
+            totalHHNN += hhnn;
+            totalOps += ops.length;
+        });
+        row['TOTAL (HHNN)'] = Math.round(totalHHNN);
+        row['TOTAL (Ops)'] = totalOps;
+        if (totalOps > 0) data.push(row);
+    });
+    // Total row
+    var totalRow = { Negocio: 'TOTAL' };
+    var grandHHNN = 0, grandOps = 0;
+    fases.forEach(function(f, i) {
+        var ops = DB.suelos.filter(function(s) { return s.pipeline_estado === f; });
+        var hhnn = ops.reduce(function(s, o) { return s + (calcHHNN(o) || 0); }, 0);
+        totalRow[fasesShort[i] + ' (HHNN)'] = Math.round(hhnn);
+        totalRow[fasesShort[i] + ' (Ops)'] = ops.length;
+        grandHHNN += hhnn;
+        grandOps += ops.length;
+    });
+    totalRow['TOTAL (HHNN)'] = Math.round(grandHHNN);
+    totalRow['TOTAL (Ops)'] = grandOps;
+    data.push(totalRow);
+    var ws = XLSX.utils.json_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'HHNN por Negocio');
+    XLSX.writeFile(wb, 'HHNN_Negocio_Fase_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    showToast('Excel HHNN exportado', 'success');
+}
+
 function renderHHNNTable() {
     var el = document.getElementById('dashHHNNTable');
     if (!el) return;
@@ -4146,20 +4255,49 @@ function renderHHNNTable() {
     el.innerHTML = '<table class="data-table" style="width:100%;"><thead>'+th+'</thead><tbody>'+rows+'</tbody></table>';
 }
 
+var _dashNegFilter = 'Todos';
+
+function setDashNegFilter(neg) {
+    _dashNegFilter = neg;
+    // Update button styles
+    document.querySelectorAll('#dashNegocioFilter button').forEach(function(b) {
+        b.className = b.getAttribute('data-neg') === neg ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+    });
+    renderDashboard();
+}
+
 function renderDashboard() {
-    const total = DB.suelos.length;
+    var filteredSuelos = _dashNegFilter === 'Todos' ? DB.suelos : DB.suelos.filter(function(s) { return (s.negocio || 'Cooperativa') === _dashNegFilter; });
+    const total = filteredSuelos.length;
+
+    // Render negocio filter buttons
+    var filterEl = document.getElementById('dashNegocioFilter');
+    if (filterEl) {
+        var negCounts = {};
+        DB.suelos.forEach(function(s) { var n = s.negocio || 'Cooperativa'; negCounts[n] = (negCounts[n]||0) + 1; });
+        filterEl.innerHTML = ['Todos'].concat(NEGOCIO_TYPES).map(function(n) {
+            var count = n === 'Todos' ? DB.suelos.length : (negCounts[n]||0);
+            var cls = n === _dashNegFilter ? 'btn btn-sm' : 'btn btn-outline btn-sm';
+            if (n !== 'Todos' && count === 0) return '';
+            return '<button class="'+cls+'" data-neg="'+n+'" onclick="setDashNegFilter(\''+n+'\')" style="font-size:11px;padding:4px 10px;">'+n+' <span style="opacity:0.6;font-size:10px;">('+count+')</span></button>';
+        }).join('');
+    }
+
     const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
     const invTotal = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada').reduce((sum, s) => sum + (s.inversion_estimada || 0), 0);
     const scoreAvg = total ? Math.round(DB.suelos.reduce((sum, s) => sum + s.score_total, 0) / total) : 0;
     const alertasCount = DB.alertas.filter(a => !a.leida).length;
     const actCount = DB.actividades.length;
 
-    const totalF0 = DB.suelos.filter(s => s.pipeline_estado === 'Fase 0 - Análisis Preliminar').length;
-    const totalF1 = DB.suelos.filter(s => s.pipeline_estado === 'Fase 1: Compra del suelo').length;
-    const totalSeg = DB.suelos.filter(s => s.pipeline_estado === 'Seguimiento').length;
+    const totalF0 = filteredSuelos.filter(s => s.pipeline_estado === 'Fase 0 - Análisis Preliminar').length;
+    const totalF1 = filteredSuelos.filter(s => s.pipeline_estado === 'Fase 1: Compra del suelo').length;
+    const totalSeg = filteredSuelos.filter(s => s.pipeline_estado === 'Seguimiento').length;
+
+    const totalCap = filteredSuelos.filter(s => s.pipeline_estado === 'Captada').length;
 
     document.getElementById('dashKPIs').innerHTML = [
         { icon: 'fas fa-layer-group', bg: '#dbeafe', color: '#1d4ed8', value: total, label: 'Total Oportunidades' },
+        { icon: 'fas fa-inbox', bg: '#f3e8ff', color: '#7c3aed', value: totalCap, label: 'Captadas' },
         { icon: 'fas fa-search', bg: '#fef3c7', color: '#d97706', value: totalF0, label: 'En Fase 0' },
         { icon: 'fas fa-file-signature', bg: '#d1fae5', color: '#059669', value: totalF1, label: 'En Fase 1' },
         { icon: 'fas fa-binoculars', bg: '#e0f2fe', color: '#0284c7', value: totalSeg, label: 'En Seguimiento' },
@@ -4174,20 +4312,26 @@ function renderDashboard() {
     // Charts
     renderDashCharts();
     renderDashVelocity();
+    renderConversionChart();
 
-    // Pendientes de aprobación
-    const pendientes = DB.suelos.filter(s => {
-        const pa = getPendingApprover(s);
-        return pa.text !== '-' && pa.text !== 'Listo para avanzar';
-    }).sort((a,b) => b.score_total - a.score_total).slice(0, 8);
-    document.getElementById('dashPendientes').innerHTML = pendientes.length ?
-        pendientes.map(s => {
-            const pa = getPendingApprover(s);
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;"><div style="font-weight:600;">' + s.nombre + '</div><div style="color:' + pa.color + ';">' + pa.text + ' <span class="text-light">(' + s.pipeline_estado + ')</span></div></div>';
-        }).join('') : '<p class="text-light" style="font-size:12px;">No hay aprobaciones pendientes.</p>';
+    // Últimas oportunidades captadas
+    const ultimasCap = filteredSuelos.filter(s => s.pipeline_estado === 'Captada')
+        .sort((a,b) => new Date(b.fecha_captacion || b.created_at || 0) - new Date(a.fecha_captacion || a.created_at || 0))
+        .slice(0, 10);
+    document.getElementById('dashUltimasCaptadas').innerHTML = ultimasCap.length ?
+        '<table class="data-table" style="width:100%;"><thead><tr><th style="font-size:11px;">Nombre</th><th style="font-size:11px;">Ciudad</th><th style="font-size:11px;">Negocio</th><th style="font-size:11px;">Fecha Alta</th><th style="font-size:11px;">Días</th><th style="font-size:11px;">Score</th></tr></thead><tbody>' +
+        ultimasCap.map(s => {
+            const fecha = s.fecha_captacion || s.created_at;
+            const fechaFmt = fecha ? new Date(fecha).toLocaleDateString('es-ES', {day:'2-digit',month:'short',year:'2-digit'}) : '-';
+            const dias = daysSince(fecha);
+            const diasColor = dias > 30 ? 'var(--danger)' : dias > 15 ? 'var(--warning)' : 'var(--success)';
+            const sc = getScoreClass(s.score_total);
+            return '<tr onclick="showDetalle(\'' + s.id + '\')" style="cursor:pointer;"><td style="font-weight:600;font-size:11px;color:var(--primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + s.nombre + '</td><td style="font-size:11px;">' + s.ciudad + '</td><td style="font-size:11px;">' + (s.negocio || '-') + '</td><td style="font-size:11px;">' + fechaFmt + '</td><td style="font-size:11px;font-weight:600;color:' + diasColor + ';">' + dias + 'd</td><td style="font-size:11px;"><span class="score-dot ' + sc.class + '"></span>' + s.score_total + '</td></tr>';
+        }).join('') + '</tbody></table>'
+        : '<p class="text-light" style="font-size:12px;">No hay oportunidades captadas.</p>';
 
     // Estancadas
-    const estancadas = DB.suelos.filter(s => {
+    const estancadas = filteredSuelos.filter(s => {
         if (s.pipeline_estado === 'Descartada' || s.pipeline_estado === 'Ganada') return false;
         return daysSince(s.fecha_ultimo_cambio || s.fecha_captacion) > 30;
     }).sort((a,b) => daysSince(b.fecha_ultimo_cambio || b.fecha_captacion) - daysSince(a.fecha_ultimo_cambio || a.fecha_captacion)).slice(0, 10);
@@ -4199,7 +4343,8 @@ function renderDashboard() {
         }).join('') + '</tbody></table>' : '<p class="text-light">No hay operaciones estancadas.</p>';
 
     // Top ops
-    const top = [...DB.suelos].filter(s => s.pipeline_estado !== 'Descartada').sort((a,b) => b.score_total - a.score_total).slice(0, 8);
+    const topStates = ['Captada','Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo','Seguimiento'];
+    const top = [...filteredSuelos].filter(s => topStates.indexOf(s.pipeline_estado) >= 0).sort((a,b) => b.score_total - a.score_total).slice(0, 8);
     document.getElementById('dashTopOps').innerHTML = top.length ?
         '<table class="data-table"><thead><tr><th>Nombre</th><th>Ciudad</th><th>Producto</th><th>Estado</th><th>Viv.</th><th>Score</th><th>Inversión</th><th>Pendiente</th></tr></thead><tbody>' +
         top.map(s => {
@@ -4661,7 +4806,8 @@ function exportSuelosExcel() {
             'Riesgo Urbanístico': s.riesgo_urbanistico || '', 'Clasificación': s.clasificacion_suelo || '',
             'Uso Suelo': s.uso_suelo || '', 'Fecha Captación': s.fecha_captacion?.substring(0,10) || '',
             'Días en Pipeline': daysSince(s.fecha_captacion), 'Observaciones': s.observaciones || '',
-            'SharePoint': s.sharepoint_url || ''
+            'SharePoint': s.sharepoint_url || '',
+            'CRM': s.crm_url || ''
         };
     });
     const ws = XLSX.utils.json_to_sheet(data);
@@ -4726,8 +4872,11 @@ function cleanImportedData() {
         // Trim city names
         if (s.ciudad) s.ciudad = s.ciudad.trim();
         if (s.provincia) s.provincia = s.provincia.trim();
-        // Set negocio default if empty
+        // Normalize negocio
         if (!s.negocio || s.negocio === 'N/D') s.negocio = 'Cooperativa';
+        if (s.negocio === 'P. Libre') s.negocio = 'Venta libre';
+        // Normalize pipeline_estado (legacy "Compra" → "Fase 1: Compra del suelo")
+        if (s.pipeline_estado === 'Compra') s.pipeline_estado = 'Fase 1: Compra del suelo';
         // Ensure vertical has value
         if (!s.vertical) s.vertical = 'Living';
         // Auto-calc viviendas if missing
