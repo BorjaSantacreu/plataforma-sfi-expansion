@@ -704,11 +704,13 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <div id="page-dashboard" class="page active">
     <div style="display:flex;align-items:center;margin-bottom:20px;"><h2 style="font-size:20px;font-weight:700;color:var(--primary);margin:0;">Dashboard de Expansión</h2><button class="btn btn-outline btn-sm" onclick="exportInformeComite()" style="margin-left:auto;font-size:11px;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:4px;"></i> Informe Comité</button></div>
     <div class="kpi-grid" id="dashKPIs"></div>
-    <div id="dashFunnel" class="funnel-container"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="dashCharts">
-        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pipeline por Estado</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartEstados" style="max-height:180px;"></canvas></div></div>
-        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Evolución Mensual</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartMensual" style="max-height:180px;"></canvas></div></div>
-        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Distribución Score</h2></div><div class="card-body" style="padding:8px 12px;"><canvas id="chartScoreDist" style="max-height:180px;"></canvas></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;" id="dashCharts">
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pipeline por Estado</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartEstados" style="max-height:280px;"></canvas></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Evolución Mensual</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartMensual" style="max-height:280px;"></canvas></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">HHNN Previstos por Negocio y Fase</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashHHNNTable"></div></div></div>
+        <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Distribución Score</h2></div><div class="card-body" style="padding:12px 16px;"><canvas id="chartScoreDist" style="max-height:280px;"></canvas></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;" id="dashCharts2">
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Desglose por Vertical y Estado</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashVerticalMatrix"></div></div></div>
@@ -723,6 +725,7 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
         <div class="card"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Pendientes de Aprobación</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashPendientes"></div></div></div>
     </div>
     <div class="card" style="margin-top:16px;"><div class="card-header" style="padding:10px 16px;"><h2 style="font-size:13px;">Operaciones Estancadas (&gt;30 días sin movimiento)</h2></div><div class="card-body" style="padding:8px 12px;"><div id="dashEstancadas"></div></div></div>
+    <div id="dashFunnel" class="funnel-container" style="margin-top:16px;"></div>
 </div>
 
 <!-- ===== PAGE: SUELOS (Alta + Listado) ===== -->
@@ -3241,7 +3244,7 @@ function showDetalle(id) {
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RATIO S/V (%)</label><p class="dv">${s.ratio_suelo_ventas ? s.ratio_suelo_ventas + '%' : '-'}</p><input class="de form-control" data-field="ratio_suelo_ventas" type="number" step="0.1" value="${s.ratio_suelo_ventas||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RENTABILIDAD (%)</label><p class="dv">${s.rentabilidad_estimada ? s.rentabilidad_estimada + '%' : '-'}</p><input class="de form-control" data-field="rentabilidad_estimada" type="number" step="0.1" value="${s.rentabilidad_estimada||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">VERTICAL</label><p class="dv">${s.vertical || 'Living'}</p><select class="de form-control" data-field="vertical" style="display:none;"><option ${s.vertical==='Living'||!s.vertical?'selected':''}>Living</option><option ${s.vertical==='Inversión Patrimonial'?'selected':''}>Inversión Patrimonial</option><option ${s.vertical==='Investment'?'selected':''}>Investment</option></select></div>
-                <div><label class="text-light" style="font-size:11px;font-weight:700;">NEGOCIO</label><p class="dv">${s.negocio || '-'}</p><select class="de form-control" data-field="negocio" style="display:none;"><option value="">Seleccionar...</option><option ${s.negocio==='Cooperativa'?'selected':''}>Cooperativa</option><option ${s.negocio==='Venta libre'?'selected':''}>Venta libre</option><option ${s.negocio==='Hotel'?'selected':''}>Hotel</option><option ${s.negocio==='Otros'?'selected':''}>Otros</option></select></div>
+                <div><label class="text-light" style="font-size:11px;font-weight:700;">NEGOCIO</label><p class="dv">${s.negocio || '-'}</p><select class="de form-control" data-field="negocio" style="display:none;"><option value="">Seleccionar...</option><option ${s.negocio==='Cooperativa'?'selected':''}>Cooperativa</option><option ${s.negocio==='Venta libre'?'selected':''}>Venta libre</option><option ${s.negocio==='Hotel'?'selected':''}>Hotel</option><option ${s.negocio==='BTR'?'selected':''}>BTR</option><option ${s.negocio==='Otros'?'selected':''}>Otros</option></select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RESPONSABLE</label><p class="dv">${s.responsable || '-'}</p><input class="de form-control" data-field="responsable" value="${(s.responsable||'').replace(/"/g,'&quot;')}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">ESTADO PIPELINE</label><p class="dv">${s.pipeline_estado}</p><select class="de form-control" data-field="pipeline_estado" style="display:none;">${PIPELINE_ESTADOS.map(e=>'<option '+(s.pipeline_estado===e.id?'selected':'')+' value="'+e.id+'">'+e.id+'</option>').join('')}</select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">SHAREPOINT URL</label><p class="dv">${s.sharepoint_url ? '<a href="' + s.sharepoint_url + '" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fas fa-folder-open"></i> Abrir documentación</a>' : '<span style="color:var(--text-light);">Sin enlace</span>'}</p><input class="de form-control" data-field="sharepoint_url" value="${(s.sharepoint_url||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="display:none;"></div>
@@ -3758,7 +3761,7 @@ function renderPipelineTable() {
 // ============================================================
 var _scoringActiveNeg = 'Cooperativa';
 var _previewActiveNeg = 'Todos';
-var NEGOCIO_TYPES = ['Cooperativa','Venta libre','Hotel','Otros'];
+var NEGOCIO_TYPES = ['Cooperativa','Venta libre','Hotel','BTR','Otros'];
 
 // Criterios de scoring — cada uno tiene tipo para saber cómo renderizar rangos
 var SCORING_CRITERIOS = [
@@ -4069,6 +4072,80 @@ function renderFunnel() {
     container.innerHTML = '<div class="funnel-title"><i class="fas fa-filter" style="margin-right:8px;color:var(--gold);"></i>Funnel de Conversión</div>' + barsHtml + negTable;
 }
 
+function renderHHNNTable() {
+    var el = document.getElementById('dashHHNNTable');
+    if (!el) return;
+    var fases = [
+        { id: 'Captada', short: 'Captada' },
+        { id: 'Fase 0 - Análisis Preliminar', short: 'Fase 0' },
+        { id: 'Fase 1: Compra del suelo', short: 'Fase 1' },
+        { id: 'Ganada', short: 'Ganada' },
+        { id: 'Seguimiento', short: 'Seguimiento' },
+        { id: 'Vendida', short: 'Vendida' },
+        { id: 'Descartada', short: 'Descartada' }
+    ];
+    var negocios = ['Cooperativa','Venta libre','Hotel','BTR','Otros','Sin definir'];
+    var data = {};
+    negocios.forEach(function(n) {
+        data[n] = {};
+        fases.forEach(function(f) { data[n][f.id] = { count: 0, hhnn: 0 }; });
+        data[n]._total = { count: 0, hhnn: 0 };
+    });
+    DB.suelos.forEach(function(s) {
+        var neg = s.negocio || 'Sin definir';
+        if (!data[neg]) { neg = 'Sin definir'; }
+        var est = s.pipeline_estado;
+        if (data[neg][est]) {
+            data[neg][est].count++;
+            data[neg][est].hhnn += (calcHHNN(s) || 0);
+        }
+        data[neg]._total.count++;
+        data[neg]._total.hhnn += (calcHHNN(s) || 0);
+    });
+    // Totals row
+    var totals = {};
+    fases.forEach(function(f) { totals[f.id] = { count: 0, hhnn: 0 }; });
+    totals._total = { count: 0, hhnn: 0 };
+    negocios.forEach(function(n) {
+        fases.forEach(function(f) {
+            totals[f.id].count += data[n][f.id].count;
+            totals[f.id].hhnn += data[n][f.id].hhnn;
+        });
+        totals._total.count += data[n]._total.count;
+        totals._total.hhnn += data[n]._total.hhnn;
+    });
+    var th = '<tr><th style="text-align:left;font-size:11px;">Negocio</th>';
+    fases.forEach(function(f) { th += '<th style="text-align:center;font-size:10px;">'+f.short+'</th>'; });
+    th += '<th style="text-align:center;font-size:10px;font-weight:700;">TOTAL</th></tr>';
+    var rows = '';
+    negocios.forEach(function(n) {
+        if (data[n]._total.count === 0) return;
+        rows += '<tr><td style="font-weight:600;font-size:11px;">'+n+'</td>';
+        fases.forEach(function(f) {
+            var d = data[n][f.id];
+            if (d.count > 0) {
+                rows += '<td style="text-align:center;font-size:10px;"><div style="font-weight:600;">'+fmtMoney(d.hhnn)+'</div><div style="color:var(--text-light);font-size:9px;">'+d.count+' ops</div></td>';
+            } else {
+                rows += '<td style="text-align:center;color:var(--text-light);font-size:10px;">-</td>';
+            }
+        });
+        var t = data[n]._total;
+        rows += '<td style="text-align:center;font-size:10px;font-weight:700;background:#f8fafc;"><div>'+fmtMoney(t.hhnn)+'</div><div style="color:var(--text-light);font-size:9px;">'+t.count+' ops</div></td></tr>';
+    });
+    // Total row
+    rows += '<tr style="border-top:2px solid var(--border);font-weight:700;background:#f1f5f9;"><td style="font-size:11px;">TOTAL</td>';
+    fases.forEach(function(f) {
+        var d = totals[f.id];
+        if (d.count > 0) {
+            rows += '<td style="text-align:center;font-size:10px;"><div>'+fmtMoney(d.hhnn)+'</div><div style="color:var(--text-light);font-size:9px;">'+d.count+' ops</div></td>';
+        } else {
+            rows += '<td style="text-align:center;color:var(--text-light);font-size:10px;">-</td>';
+        }
+    });
+    rows += '<td style="text-align:center;font-size:10px;background:#e2e8f0;"><div>'+fmtMoney(totals._total.hhnn)+'</div><div style="color:var(--text-light);font-size:9px;">'+totals._total.count+' ops</div></td></tr>';
+    el.innerHTML = '<table class="data-table" style="width:100%;"><thead>'+th+'</thead><tbody>'+rows+'</tbody></table>';
+}
+
 function renderDashboard() {
     const total = DB.suelos.length;
     const activas = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada' && s.pipeline_estado !== 'Ganada').length;
@@ -4077,17 +4154,22 @@ function renderDashboard() {
     const alertasCount = DB.alertas.filter(a => !a.leida).length;
     const actCount = DB.actividades.length;
 
+    const totalF0 = DB.suelos.filter(s => s.pipeline_estado === 'Fase 0 - Análisis Preliminar').length;
+    const totalF1 = DB.suelos.filter(s => s.pipeline_estado === 'Fase 1: Compra del suelo').length;
+    const totalSeg = DB.suelos.filter(s => s.pipeline_estado === 'Seguimiento').length;
+
     document.getElementById('dashKPIs').innerHTML = [
         { icon: 'fas fa-layer-group', bg: '#dbeafe', color: '#1d4ed8', value: total, label: 'Total Oportunidades' },
-        { icon: 'fas fa-chart-line', bg: '#d1fae5', color: '#059669', value: activas, label: 'En Pipeline Activo' },
-        { icon: 'fas fa-euro-sign', bg: '#fef3c7', color: '#d97706', value: fmtMoney(invTotal), label: 'Inversión Potencial' },
-        { icon: 'fas fa-star', bg: '#e0e7ff', color: '#4338ca', value: scoreAvg, label: 'Score Medio' },
-        { icon: 'fas fa-bell', bg: '#fee2e2', color: '#dc2626', value: alertasCount, label: 'Alertas Pendientes' },
-        { icon: 'fas fa-history', bg: '#f3e8ff', color: '#7c3aed', value: actCount, label: 'Actividades Registradas' },
+        { icon: 'fas fa-search', bg: '#fef3c7', color: '#d97706', value: totalF0, label: 'En Fase 0' },
+        { icon: 'fas fa-file-signature', bg: '#d1fae5', color: '#059669', value: totalF1, label: 'En Fase 1' },
+        { icon: 'fas fa-binoculars', bg: '#e0f2fe', color: '#0284c7', value: totalSeg, label: 'En Seguimiento' },
     ].map(k => `<div class="kpi-card"><div class="kpi-icon" style="background:${k.bg};color:${k.color};"><i class="${k.icon}"></i></div><div class="kpi-value">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
     // Funnel de conversión
     renderFunnel();
+
+    // HHNN table by negocio and fase
+    renderHHNNTable();
 
     // Charts
     renderDashCharts();
@@ -5197,7 +5279,7 @@ const DEFAULT_PLANTILLA = [
     { id: 'volumen_ventas', label: 'Volumen ventas estimado (€)', visible: true, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
     { id: 'rentabilidad_estimada', label: 'Rentabilidad estimada (%)', visible: false, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
     { id: 'vertical', label: 'Vertical de negocio', visible: true, obligatorio: false, defecto: 'Living', tipo: 'select', grupo: 'clasificacion', opciones: ['Living','Inversión Patrimonial','Investment'] },
-    { id: 'negocio', label: 'Tipo de negocio', visible: true, obligatorio: false, defecto: 'Cooperativa', tipo: 'select', grupo: 'clasificacion', opciones: ['Cooperativa','Venta libre','Hotel','Otros'] },
+    { id: 'negocio', label: 'Tipo de negocio', visible: true, obligatorio: false, defecto: 'Cooperativa', tipo: 'select', grupo: 'clasificacion', opciones: ['Cooperativa','Venta libre','Hotel','BTR','Otros'] },
     { id: 'observaciones', label: 'Observaciones', visible: true, obligatorio: false, defecto: '', tipo: 'textarea', grupo: 'otros' },
 ];
 
