@@ -1710,6 +1710,7 @@ function pullFromSupabase() {
 
         localStorage.setItem('sfi_last_sync', new Date().toISOString());
         addLog('\nSync completado: ' + new Date().toLocaleString('es-ES'));
+        if (typeof cleanImportedData === 'function') cleanImportedData();
         if (typeof ensurePorNegocio === 'function') ensurePorNegocio();
         recalcAllScores();
         generateAlerts();
@@ -4021,7 +4022,8 @@ function renderFunnel() {
     var invs = {};
     var negocios = {};
     funnelStates.forEach(function(st) { counts[st] = 0; invs[st] = 0; });
-    DB.suelos.forEach(function(s) {
+    var funnelSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    funnelSrc.forEach(function(s) {
         var st = s.pipeline_estado;
         if (counts[st] !== undefined) {
             counts[st]++;
@@ -4052,7 +4054,7 @@ function renderFunnel() {
     funnelStates.forEach(function(st, i) {
         cumCounts[st] = 0;
         var stOrden = estadoOrden[st] || (i + 1);
-        DB.suelos.forEach(function(s) {
+        funnelSrc.forEach(function(s) {
             var sIdx = funnelStates.indexOf(s.pipeline_estado);
             // Current estado is at or beyond this funnel stage
             if (sIdx >= i) { cumCounts[st]++; return; }
@@ -4116,7 +4118,8 @@ function renderConversionChart() {
         var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
         months[key] = { captadas: 0, aF0: 0, aF1: 0, ganadas: 0 };
     }
-    DB.suelos.forEach(function(s) {
+    var convSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    convSrc.forEach(function(s) {
         // Count captadas by fecha_captacion month
         if (s.fecha_captacion) {
             var fc = s.fecha_captacion.substring(0, 7);
@@ -4223,7 +4226,8 @@ function renderHHNNTable() {
         fases.forEach(function(f) { data[n][f.id] = { count: 0, hhnn: 0 }; });
         data[n]._total = { count: 0, hhnn: 0 };
     });
-    DB.suelos.forEach(function(s) {
+    var hhnnSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    hhnnSrc.forEach(function(s) {
         var neg = s.negocio || 'Sin definir';
         if (!data[neg]) { neg = 'Sin definir'; }
         var est = s.pipeline_estado;
@@ -4289,8 +4293,10 @@ function setDashNegFilter(neg) {
     renderDashboard();
 }
 
+var _filteredDashSuelos = [];
 function renderDashboard() {
     var filteredSuelos = _dashNegFilter === 'Todos' ? DB.suelos : DB.suelos.filter(function(s) { return (s.negocio || 'Cooperativa') === _dashNegFilter; });
+    _filteredDashSuelos = filteredSuelos;
     const total = filteredSuelos.length;
 
     // Render negocio filter buttons
@@ -4385,12 +4391,13 @@ function renderDashCharts() {
     if (chartMensual) chartMensual.destroy();
     if (window._chartScore) window._chartScore.destroy();
 
-    var activos = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada');
+    var src = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var activos = src.filter(s => s.pipeline_estado !== 'Descartada');
 
     // 1. Pipeline bar chart (compact)
     const estadoCounts = {};
     PIPELINE_ESTADOS.forEach(e => estadoCounts[e.id] = 0);
-    DB.suelos.forEach(s => { if (estadoCounts[s.pipeline_estado] !== undefined) estadoCounts[s.pipeline_estado]++; });
+    src.forEach(s => { if (estadoCounts[s.pipeline_estado] !== undefined) estadoCounts[s.pipeline_estado]++; });
     // Short labels
     var shortLabels = Object.keys(estadoCounts).map(l => l.replace('Fase 0 - Análisis Preliminar','Fase 0').replace('Fase 1: Compra del suelo','Fase 1'));
     chartEstados = new Chart(document.getElementById('chartEstados'), {
@@ -4401,7 +4408,7 @@ function renderDashCharts() {
 
     // 2. Monthly line chart (compact)
     const months = {};
-    DB.suelos.forEach(s => {
+    src.forEach(s => {
         const m = (s.fecha_captacion || '').substring(0, 7);
         if (m) months[m] = (months[m] || 0) + 1;
     });
@@ -4496,18 +4503,19 @@ function renderNegocioSummary(activos) {
 function renderDashVelocity() {
     var el = document.getElementById('dashVelocityPanel');
     if (!el) return;
-    var activos = DB.suelos.filter(s => s.pipeline_estado !== 'Descartada');
+    var velSrc = _filteredDashSuelos.length ? _filteredDashSuelos : DB.suelos;
+    var activos = velSrc.filter(s => s.pipeline_estado !== 'Descartada');
 
     // Funnel: conversion rates between stages
     var counts = {};
     PIPELINE_ESTADOS.forEach(e => counts[e.id] = 0);
-    DB.suelos.forEach(s => { if (counts[s.pipeline_estado] !== undefined) counts[s.pipeline_estado]++; });
+    velSrc.forEach(s => { if (counts[s.pipeline_estado] !== undefined) counts[s.pipeline_estado]++; });
     var funnelSteps = ['Captada','Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo','Ganada'];
     var funnelCounts = funnelSteps.map(f => counts[f] || 0);
     // Add suelos that PASSED through each stage (current + those that moved beyond)
     var passedThrough = {};
     funnelSteps.forEach((f,i) => {
-        passedThrough[f] = DB.suelos.filter(s => {
+        passedThrough[f] = velSrc.filter(s => {
             if (s.pipeline_estado === f) return true;
             // Check if fechas_fase has this stage
             if (s.fechas_fase && s.fechas_fase[f]) return true;
@@ -4520,7 +4528,7 @@ function renderDashVelocity() {
     // Velocity: avg days between stages
     var velocities = {};
     ['Fase 0 - Análisis Preliminar','Fase 1: Compra del suelo','Ganada'].forEach(function(fase) {
-        var dias = DB.suelos.map(s => diasHastaFase(s, fase)).filter(d => d !== null && d >= 0);
+        var dias = velSrc.map(s => diasHastaFase(s, fase)).filter(d => d !== null && d >= 0);
         velocities[fase] = dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null;
     });
 
@@ -4932,7 +4940,7 @@ function cleanImportedData() {
         // Normalize negocio
         if (!s.negocio || s.negocio === 'N/D') s.negocio = 'Cooperativa';
         if (s.negocio === 'P. Libre') s.negocio = 'Venta libre';
-            if (!s.impulsa) s.impulsa = 'No';
+        if (!s.impulsa) s.impulsa = 'No';
         // Normalize pipeline_estado (legacy "Compra" → "Fase 1: Compra del suelo")
         if (s.pipeline_estado === 'Compra') s.pipeline_estado = 'Fase 1: Compra del suelo';
         // Ensure vertical has value
@@ -7457,6 +7465,7 @@ function showToast(message, type) {
 function init() {
     loadDB();
     importData();
+    cleanImportedData();
     recalcAllScores();
     generateAlerts();
     renderDashboard();
