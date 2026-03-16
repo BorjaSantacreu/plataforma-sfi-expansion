@@ -6399,13 +6399,41 @@ function enterApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('loginPassError').style.display = 'none';
     updateUserBadge();
-    if (currentRole === 'visor') applyVisorRestrictions();
+    if (currentRole === 'visor') {
+        applyVisorRestrictions();
+    } else {
+        resetVisorRestrictions();
+        renderDashboard();
+    }
+}
+
+function resetVisorRestrictions() {
+    document.body.classList.remove('visor-mode');
+    _globalFilter = 'all';
+    document.querySelectorAll('.gf-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+    });
+    var gfBar = document.getElementById('globalImpulsaFilter');
+    if (gfBar) gfBar.style.display = '';
+    document.querySelectorAll('.nav-item[data-page]').forEach(function(item) { item.style.display = ''; });
+    document.querySelectorAll('.sidebar .section-header').forEach(function(h) { h.style.display = ''; });
+    var searchBox = document.querySelector('.search-box');
+    if (searchBox) searchBox.style.display = '';
+    var alertBtn = document.getElementById('alertBtn');
+    if (alertBtn) alertBtn.style.display = '';
+    var configBtn = document.getElementById('configBtn');
+    if (configBtn) configBtn.style.display = '';
+    var sub = document.querySelector('.subtitle');
+    if (sub) sub.textContent = 'Plataforma de Expansión';
+    var fab = document.getElementById('fabNuevo');
+    if (fab) fab.style.display = '';
 }
 
 function logout() {
     if (confirm('¿Cerrar sesión?')) {
         localStorage.removeItem('sfi_role');
         currentRole = '';
+        resetVisorRestrictions();
         document.getElementById('loginScreen').classList.remove('hidden');
         document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
         document.getElementById('loginBtn').disabled = true;
@@ -6429,7 +6457,11 @@ function checkAutoLogin() {
     if (currentRole) {
         document.getElementById('loginScreen').classList.add('hidden');
         updateUserBadge();
-        if (currentRole === 'visor') applyVisorRestrictions();
+        if (currentRole === 'visor') {
+            applyVisorRestrictions();
+        } else {
+            resetVisorRestrictions();
+        }
     }
 }
 
