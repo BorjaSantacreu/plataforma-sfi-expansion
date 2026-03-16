@@ -369,6 +369,10 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f2f
 .card-header h2{color:var(--primary);}
 h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 
+/* ============ VISOR MODE ============ */
+body.visor-mode .visor-hide { display: none !important; }
+body.visor-mode .kanban-card { cursor: default !important; }
+body.visor-mode select[onchange*="changePipelineEstado"] { pointer-events: none; appearance: none; -webkit-appearance: none; background: transparent; border: none; padding: 0; color: inherit; }
 /* ============ LOGIN SCREEN ============ */
 .login-screen{
     position:fixed;inset:0;z-index:999;background:linear-gradient(135deg,#3A3A3A 0%,#4A4A4A 50%,#3A3A3A 100%);
@@ -620,6 +624,11 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
             <div class="role-card" onclick="selectRole(this,'ceo')" data-role="ceo">
                 <div class="role-icon" style="background:#8b5cf6;"><i class="fas fa-crown"></i></div>
                 <div class="role-info"><h3>CEO / Comité Directivo</h3><p>Visión estratégica, aprobación final e informes</p></div>
+            </div>
+            <div style="border-top:1px solid #e2e8f0;margin:8px 0;"></div>
+            <div class="role-card" onclick="selectRole(this,'visor')" data-role="visor" style="border-color:#C4A55A;border-style:dashed;">
+                <div class="role-icon" style="background:#C4A55A;"><i class="fas fa-eye"></i></div>
+                <div class="role-info"><h3>Visor IMPULSA</h3><p>Acceso de lectura al pipeline IMPULSA</p></div>
             </div>
         </div>
         <div id="loginPassWrap" style="display:none;margin-bottom:16px;">
@@ -2044,6 +2053,10 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-ES') : '-'; 
 // NAVIGATION
 // ============================================================
 function navigateTo(page) {
+    // Visor: restrict to allowed pages only
+    if (isVisor() && ['pipeline','mapa','fase0','fase1','seguimiento'].indexOf(page) === -1) {
+        page = 'pipeline';
+    }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const el = document.getElementById('page-' + page);
@@ -2281,6 +2294,7 @@ let currentStep = 1;
 const totalSteps = 4;
 
 function showNuevoSuelo() {
+    if (isVisor()) { alert('Modo visor: no se permite crear suelos.'); return; }
     const config = getPlantilla().filter(c => c.visible);
     currentStep = 1;
     updateStepper();
@@ -2438,6 +2452,7 @@ function collectContactoSlots() {
 }
 
 function saveSuelo() {
+    if (isVisor()) { alert('Modo visor: no se permite crear suelos.'); return; }
     const nombre = document.getElementById('ns_nombre').value;
     if (!nombre) { alert('El nombre es obligatorio'); return; }
 
@@ -3093,6 +3108,7 @@ function renderSuelosTable() {
 // ============================================================
 
 function toggleDetalleEdit(id) {
+    if (isVisor()) { alert('Modo visor: no se permite editar.'); return; }
     document.querySelectorAll('#detalleFieldsGrid .dv, #dt-info .dv').forEach(function(el){ el.style.display = 'none'; });
     document.querySelectorAll('#detalleFieldsGrid .de, #dt-info .de').forEach(function(el){ el.style.display = ''; });
     document.getElementById('btnEditDetalle').style.display = 'none';
@@ -3297,7 +3313,7 @@ function showDetalle(id) {
 
         <div class="tab-panel active" id="dt-info">
             <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-                <button class="btn btn-outline btn-sm" id="btnEditDetalle" onclick="toggleDetalleEdit('${s.id}')"><i class="fas fa-pen"></i> Editar</button>
+                <button class="btn btn-outline btn-sm" id="btnEditDetalle" ${isVisor()?"style=\"display:none\"":""} onclick="toggleDetalleEdit('${s.id}')"><i class="fas fa-pen"></i> Editar</button>
                 <button class="btn btn-primary btn-sm" id="btnSaveDetalle" onclick="saveDetalleEdit('${s.id}')" style="display:none;margin-left:6px;"><i class="fas fa-save"></i> Guardar</button>
                 <button class="btn btn-outline btn-sm" id="btnCancelDetalle" onclick="showDetalle('${s.id}')" style="display:none;margin-left:6px;"><i class="fas fa-times"></i> Cancelar</button>
             </div>
@@ -3334,12 +3350,12 @@ function showDetalle(id) {
             ${s.latitud && s.longitud ? '<div class="mt-16"><strong class="text-light" style="font-size:11px;">UBICACIÓN</strong><div style="display:flex;gap:8px;margin-top:6px;margin-bottom:8px;"><a href="https://www.google.com/maps?q=' + s.latitud + ',' + s.longitud + '" target="_blank" class="btn btn-outline btn-sm" style="font-size:11px;"><i class="fas fa-map-marked-alt"></i> Ver en Google Maps</a></div><div id="detalleMapContainer" style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border);"></div></div>' : ''}
             ${s.observaciones ? '<div class="mt-16"><strong class="text-light" style="font-size:11px;">OBSERVACIONES</strong><p style="margin-top:4px;background:#f8fafc;padding:12px;border-radius:6px;font-size:13px;line-height:1.5;">' + s.observaciones + '</p></div>' : ''}
             <div class="mt-16 flex gap-8 flex-wrap">
-                <button class="btn btn-gold btn-sm" onclick="cambiarEstadoWorkflow('${s.id}')"><i class="fas fa-arrow-right"></i> Avanzar Pipeline</button>
-                <button class="btn btn-accent btn-sm" onclick="closeModal('modalDetalle');showNuevaActividadPara('${s.id}')"><i class="fas fa-plus"></i> Registrar Actividad</button>
-                <button class="btn btn-outline btn-sm" onclick="editScore('${s.id}')"><i class="fas fa-star"></i> Ajustar Score</button>
+                ${isVisor()?'':'<button class="btn btn-gold btn-sm" onclick="cambiarEstadoWorkflow(\''+s.id+'\')"><i class="fas fa-arrow-right"></i> Avanzar Pipeline</button>'}
+                ${isVisor()?'':'<button class="btn btn-accent btn-sm" onclick="closeModal(\'modalDetalle\');showNuevaActividadPara(\''+s.id+'\')"><i class="fas fa-plus"></i> Registrar Actividad</button>'}
+                ${isVisor()?'':'<button class="btn btn-outline btn-sm" onclick="editScore(\''+s.id+'\')"><i class="fas fa-star"></i> Ajustar Score</button>'}
                 <button class="btn btn-outline btn-sm" onclick="exportFichaPDF('${s.id}')"><i class="fas fa-file-pdf"></i> Exportar Ficha</button>
-                <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="closeModal('modalDetalle');showEnviarFicha('${s.id}')"><i class="fas fa-paper-plane"></i> Enviar Ficha</button>
-                <button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="closeModal('modalDetalle');showSolicitarCambioFase('${s.id}')"><i class="fas fa-exchange-alt"></i> Solicitar Cambio Fase</button>
+                ${isVisor()?'':'<button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="closeModal(\'modalDetalle\');showEnviarFicha(\''+s.id+'\')"><i class="fas fa-paper-plane"></i> Enviar Ficha</button>'}
+                ${isVisor()?'':'<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="closeModal(\'modalDetalle\');showSolicitarCambioFase(\''+s.id+'\')"><i class="fas fa-exchange-alt"></i> Solicitar Cambio Fase</button>'}
             </div>
         </div>
 
@@ -3403,7 +3419,7 @@ function showDetalle(id) {
 
         <div class="tab-panel" id="dt-actividad">
     ${buildEnhancedTimeline(s, acts)}
-    <button class="btn btn-accent btn-sm mt-16" onclick="closeModal('modalDetalle');showNuevaActividadPara('${s.id}')"><i class="fas fa-plus"></i> Registrar Actividad</button>
+    ${isVisor()?'':'<button class="btn btn-accent btn-sm mt-16" onclick="closeModal(\'modalDetalle\');showNuevaActividadPara(\''+s.id+'\')"><i class="fas fa-plus"></i> Registrar Actividad</button>'}
 </div>
 
         <div class="tab-panel" id="dt-scoring">
@@ -3565,6 +3581,7 @@ function kanbanDragLeave(e) {
 }
 function kanbanDrop(e) {
     e.preventDefault();
+    if (isVisor()) return; // Visor: read-only
     var col = e.target.closest('.kanban-column');
     if (!col) return;
     col.classList.remove('drag-over');
@@ -3698,7 +3715,7 @@ function renderKanban() {
                 ${items.map(s => {
                     const sc = getScoreClass(s.score_total);
                     const negBadge = s.negocio ? '<span style="font-size:9px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:var(--text-light);">'+s.negocio+'</span>' : '';
-                    return `<div class="kanban-card" draggable="true" data-suelo-id="${s.id}" data-estado="${estado.id}" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)" onclick="showDetalle('${s.id}')" style="border-left:3px solid ${vColor};">
+                    return `<div class="kanban-card" draggable="${isVisor()?"false":"true"}" data-suelo-id="${s.id}" data-estado="${estado.id}" ondragstart="${isVisor()?"return false":"kanbanDragStart(event)"}" ondragend="kanbanDragEnd(event)" onclick="showDetalle('${s.id}')" style="border-left:3px solid ${vColor};">
                         <div class="card-title" style="font-size:12px;">${s.nombre}</div>
                         <div class="card-meta">${s.ciudad} · ${s.num_viviendas || '?'} viv · <span class="score-dot ${sc.class}"></span>${s.score_total} ${negBadge}</div>
                         ${s.precio_suelo ? '<div class="card-meta">'+fmtMoney(s.precio_suelo)+(s.precio_m2t ? ' · '+s.precio_m2t+'€/m²t' : '')+'</div>' : ''}
@@ -6340,7 +6357,7 @@ function getPasswords() {
         const stored = localStorage.getItem('sfi_passwords');
         if (stored) return JSON.parse(stored);
     } catch(e) {}
-    return { analista: DEFAULT_PASS, directora: DEFAULT_PASS, ceo: DEFAULT_PASS };
+    return { analista: DEFAULT_PASS, directora: DEFAULT_PASS, ceo: DEFAULT_PASS, visor: DEFAULT_PASS };
 }
 
 function savePasswords(pw) {
@@ -6381,6 +6398,7 @@ function enterApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('loginPassError').style.display = 'none';
     updateUserBadge();
+    if (currentRole === 'visor') applyVisorRestrictions();
 }
 
 function logout() {
@@ -6396,7 +6414,7 @@ function logout() {
 }
 
 function updateUserBadge() {
-    const roles = {analista:{label:'Analista',color:'var(--accent)',letter:'A'},directora:{label:'Directora',color:'var(--warning)',letter:'D'},ceo:{label:'CEO',color:'#8b5cf6',letter:'C'}};
+    const roles = {analista:{label:'Analista',color:'var(--accent)',letter:'A'},directora:{label:'Directora',color:'var(--warning)',letter:'D'},ceo:{label:'CEO',color:'#8b5cf6',letter:'C'},visor:{label:'Visor IMPULSA',color:'#C4A55A',letter:'V'}};
     const r = roles[currentRole] || roles.analista;
     document.getElementById('userAvatar').style.background = r.color;
     document.getElementById('userAvatar').textContent = r.letter;
@@ -6410,7 +6428,60 @@ function checkAutoLogin() {
     if (currentRole) {
         document.getElementById('loginScreen').classList.add('hidden');
         updateUserBadge();
+        if (currentRole === 'visor') applyVisorRestrictions();
     }
+}
+
+function isVisor() { return currentRole === 'visor'; }
+
+function applyVisorRestrictions() {
+    // 0. Add visor-mode class to body
+    document.body.classList.add('visor-mode');
+    // 1. Force global filter to IMPULSA
+    _globalFilter = 'impulsa';
+    // Update button states silently
+    document.querySelectorAll('.gf-btn').forEach(function(b) {
+        if (b.getAttribute('data-gf') === 'impulsa') {
+            b.style.background = 'rgba(196,165,90,.9)'; b.style.color = '#fff'; b.style.fontWeight = '600';
+            b.classList.add('gf-active');
+        } else {
+            b.style.background = 'transparent'; b.style.color = 'rgba(255,255,255,.7)'; b.style.fontWeight = '500';
+            b.classList.remove('gf-active');
+        }
+    });
+    // 2. Hide global filter buttons (visor can't change it)
+    document.getElementById('globalImpulsaFilter').style.display = 'none';
+    // 3. Add visor badge next to subtitle
+    var sub = document.querySelector('.subtitle');
+    if (sub) sub.innerHTML = 'Pipeline IMPULSA <span style="background:#C4A55A;color:#fff;font-size:9px;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:700;">VISOR</span>';
+    // 4. Hide sidebar items not allowed
+    var allowed = ['pipeline','mapa','fase0','fase1','seguimiento'];
+    document.querySelectorAll('.nav-item[data-page]').forEach(function(item) {
+        if (allowed.indexOf(item.getAttribute('data-page')) === -1) item.style.display = 'none';
+    });
+    // Hide section headers that have no visible children
+    document.querySelectorAll('.nav-section').forEach(function(sec) {
+        var next = sec.nextElementSibling;
+        var hasVisible = false;
+        while (next && !next.classList.contains('nav-section')) {
+            if (next.style.display !== 'none' && next.classList.contains('nav-item')) hasVisible = true;
+            next = next.nextElementSibling;
+        }
+        if (!hasVisible) sec.style.display = 'none';
+    });
+    // 5. Hide header elements: search, alerts bell, config gear, admin
+    document.querySelector('.global-search-wrapper').style.display = 'none';
+    var alertBell = document.getElementById('alertBell');
+    if (alertBell) alertBell.style.display = 'none';
+    var configBtn = document.querySelector('.header-btn[onclick="showConfigModal()"]');
+    if (configBtn) configBtn.style.display = 'none';
+    var syncBadge = document.getElementById('headerSyncBadge');
+    if (syncBadge) syncBadge.style.display = 'none';
+    // 6. Hide "Nueva Oportunidad" floating button if exists
+    var fabBtn = document.getElementById('fabNuevoSuelo');
+    if (fabBtn) fabBtn.style.display = 'none';
+    // 7. Navigate to pipeline as default page
+    navigateTo('pipeline');
 }
 
 // CHANGE PASSWORD MODAL
@@ -6468,16 +6539,16 @@ function doChangePassword(btn) {
 function showAdminUsers() {
     if (currentRole !== 'analista') { alert('Solo el usuario Analista puede gestionar usuarios.'); return; }
     const passwords = getPasswords();
-    const roleLabels = { analista: 'Analista de Expansión', directora: 'Directora de Expansión', ceo: 'CEO / Comité Directivo' };
-    const roleIcons = { analista: 'fa-search', directora: 'fa-user-tie', ceo: 'fa-crown' };
-    const roleColors = { analista: 'var(--accent)', directora: 'var(--warning)', ceo: '#8b5cf6' };
+    const roleLabels = { analista: 'Analista de Expansión', directora: 'Directora de Expansión', ceo: 'CEO / Comité Directivo', visor: 'Visor IMPULSA' };
+    const roleIcons = { analista: 'fa-search', directora: 'fa-user-tie', ceo: 'fa-crown', visor: 'fa-eye' };
+    const roleColors = { analista: 'var(--accent)', directora: 'var(--warning)', ceo: '#8b5cf6', visor: '#C4A55A' };
 
     const m = document.createElement('div');
     m.className = 'modal-overlay active';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
     let cards = '';
-    ['analista','directora','ceo'].forEach(role => {
+    ['analista','directora','ceo','visor'].forEach(role => {
         const isDefault = passwords[role] === DEFAULT_PASS;
         const statusBadge = isDefault
             ? '<span style="background:#fef3c7;color:#d97706;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;">Por defecto</span>'
@@ -6505,7 +6576,7 @@ function showAdminUsers() {
 
 function resetUserPassword(role) {
     if (currentRole !== 'analista') return;
-    const roleLabels = { directora: 'Directora', ceo: 'CEO' };
+    const roleLabels = { directora: 'Directora', ceo: 'CEO', visor: 'Visor IMPULSA' };
     if (!confirm('¿Resetear la contraseña de ' + roleLabels[role] + ' a SFI2026?')) return;
     const passwords = getPasswords();
     passwords[role] = DEFAULT_PASS;
@@ -7522,6 +7593,7 @@ function showToast(message, type) {
 var _globalFilter = 'all'; // 'all' | 'sfi' | 'impulsa'
 
 function setGlobalFilter(mode) {
+    if (isVisor()) return; // Visor locked to IMPULSA
     _globalFilter = mode;
     // Update button styles
     document.querySelectorAll('#globalImpulsaFilter .gf-btn').forEach(function(b) {
