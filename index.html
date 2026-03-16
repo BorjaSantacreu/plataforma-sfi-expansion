@@ -1086,17 +1086,38 @@ h2[style*="color:var(--primary)"]{color:#4A4A4A !important;}
 <!-- ===== PAGE: MAPA ===== -->
 <div id="page-mapa" class="page">
     <h2 style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:16px;">Mapa de Oportunidades</h2>
-    <div class="search-bar">
-        <select class="filter-select" id="mapaFilterEstado" onchange="renderMapa()"><option value="">Todos los estados</option></select>
-        <select class="filter-select" id="mapaFilterScore" onchange="renderMapa()">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;">
+        <select class="filter-select" id="mapaFilterEstado" onchange="renderMapa()" style="min-width:160px;"><option value="">Todos los estados</option></select>
+        <select class="filter-select" id="mapaFilterScore" onchange="renderMapa()" style="min-width:140px;">
             <option value="">Todos los scores</option>
-            <option value="muy">🔵 Muy Interesante</option>
-            <option value="inter">🟢 Interesante</option>
-            <option value="media">🟠 Media</option>
-            <option value="baja">🔴 Baja</option>
+            <option value="muy">🔵 Muy Interesante (85+)</option>
+            <option value="inter">🟢 Interesante (70-84)</option>
+            <option value="media">🟠 Media (50-69)</option>
+            <option value="baja">🔴 Baja (&lt;50)</option>
         </select>
+        <select class="filter-select" id="mapaFilterNegocio" onchange="renderMapa()" style="min-width:130px;">
+            <option value="">Todos negocios</option>
+            <option value="Cooperativa">Cooperativa</option>
+            <option value="Venta libre">Venta libre</option>
+            <option value="Hotel">Hotel</option>
+            <option value="BTR">BTR</option>
+            <option value="Otros">Otros</option>
+        </select>
+        <select class="filter-select" id="mapaFilterVertical" onchange="renderMapa()" style="min-width:150px;">
+            <option value="">Todas verticales</option>
+            <option value="Living">Living</option>
+            <option value="Inversión Patrimonial">Inversión Patrimonial</option>
+            <option value="Investment">Investment</option>
+        </select>
+        <select class="filter-select" id="mapaFilterImpulsa" onchange="renderMapa()" style="min-width:110px;">
+            <option value="">Impulsa: Todos</option>
+            <option value="Sí">Sí</option>
+            <option value="No">No</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearMapFilters()" style="font-size:11px;padding:4px 10px;"><i class="fas fa-times"></i> Limpiar</button>
+        <span id="mapaCount" style="font-size:11px;color:var(--text-light);margin-left:auto;"></span>
     </div>
-    <div id="leafletMap" style="height:calc(100vh - 220px);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);"></div>
+    <div id="leafletMap" style="height:calc(100vh - 240px);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);"></div>
 </div>
 
 
@@ -1715,7 +1736,7 @@ function migrateLocalToSupabase() {
     function addLog(msg) { if (log) log.innerHTML += msg + '\n'; }
 
     // Column whitelist per table
-    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','fechas_fase','sharepoint_url','crm_url','created_at'];
+    var SUELO_COLS = ['id','nombre','ciudad','provincia','comunidad_autonoma','direccion','latitud','longitud','superficie_parcela','superficie_edificable','num_viviendas','tipologia','clasificacion_suelo','uso_suelo','riesgo_urbanistico','precio_suelo','inversion_estimada','precio_m2t','ratio_suelo_ventas','rentabilidad_estimada','observaciones','pipeline_estado','contacto_id','score_total','score_desglose','responsable','negocio','vertical','fecha_captacion','fecha_ultimo_cambio','fechas_fase','sharepoint_url','crm_url','impulsa','created_at'];
     var CONTACTO_COLS = ['id','nombre','empresa','tipo','telefono','email','notas','created_at'];
     var ACTIVIDAD_COLS = ['id','suelo_id','tipo','descripcion','fecha','proximos_pasos','created_at'];
 
@@ -2410,6 +2431,7 @@ function saveSuelo() {
         score_desglose: {},
         fecha_captacion: new Date().toISOString(),
         fecha_ultimo_cambio: new Date().toISOString(),
+        impulsa: 'No',
         created_at: new Date().toISOString()
     };
 
@@ -3252,6 +3274,7 @@ function showDetalle(id) {
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RENTABILIDAD (%)</label><p class="dv">${s.rentabilidad_estimada ? s.rentabilidad_estimada + '%' : '-'}</p><input class="de form-control" data-field="rentabilidad_estimada" type="number" step="0.1" value="${s.rentabilidad_estimada||''}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">VERTICAL</label><p class="dv">${s.vertical || 'Living'}</p><select class="de form-control" data-field="vertical" style="display:none;"><option ${s.vertical==='Living'||!s.vertical?'selected':''}>Living</option><option ${s.vertical==='Inversión Patrimonial'?'selected':''}>Inversión Patrimonial</option><option ${s.vertical==='Investment'?'selected':''}>Investment</option></select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">NEGOCIO</label><p class="dv">${s.negocio || '-'}</p><select class="de form-control" data-field="negocio" style="display:none;"><option value="">Seleccionar...</option><option ${s.negocio==='Cooperativa'?'selected':''}>Cooperativa</option><option ${s.negocio==='Venta libre'?'selected':''}>Venta libre</option><option ${s.negocio==='Hotel'?'selected':''}>Hotel</option><option ${s.negocio==='BTR'?'selected':''}>BTR</option><option ${s.negocio==='Otros'?'selected':''}>Otros</option></select></div>
+                <div><label class="text-light" style="font-size:11px;font-weight:700;">IMPULSA</label><p class="dv"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${s.impulsa==='Sí'?'#d1fae5':'#fee2e2'};color:${s.impulsa==='Sí'?'#059669':'#dc2626'};">${s.impulsa || 'No'}</span></p><select class="de form-control" data-field="impulsa" style="display:none;"><option ${s.impulsa!=='Sí'?'selected':''} value="No">No</option><option ${s.impulsa==='Sí'?'selected':''} value="Sí">Sí</option></select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">RESPONSABLE</label><p class="dv">${s.responsable || '-'}</p><input class="de form-control" data-field="responsable" value="${(s.responsable||'').replace(/"/g,'&quot;')}" style="display:none;"></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">ESTADO PIPELINE</label><p class="dv">${s.pipeline_estado}</p><select class="de form-control" data-field="pipeline_estado" style="display:none;">${PIPELINE_ESTADOS.map(e=>'<option '+(s.pipeline_estado===e.id?'selected':'')+' value="'+e.id+'">'+e.id+'</option>').join('')}</select></div>
                 <div><label class="text-light" style="font-size:11px;font-weight:700;">SHAREPOINT URL</label><p class="dv">${s.sharepoint_url ? '<a href="' + s.sharepoint_url + '" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fas fa-folder-open"></i> Abrir documentación</a>' : '<span style="color:var(--text-light);">Sin enlace</span>'}</p><input class="de form-control" data-field="sharepoint_url" value="${(s.sharepoint_url||'').replace(/"/g,'&quot;')}" placeholder="https://..." style="display:none;"></div>
@@ -4580,6 +4603,14 @@ function renderDashVelocity() {
 // ============================================================
 let map, mapMarkers = [];
 
+function clearMapFilters() {
+    ['mapaFilterEstado','mapaFilterScore','mapaFilterNegocio','mapaFilterVertical','mapaFilterImpulsa'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    renderMapa();
+}
+
 function renderMapa() {
     if (!map) {
         map = L.map('leafletMap').setView([39.47, -0.38], 7);
@@ -4587,31 +4618,57 @@ function renderMapa() {
         setTimeout(() => map.invalidateSize(), 200);
     }
 
-    // Populate filter
+    // Populate estado filter
     const sel = document.getElementById('mapaFilterEstado');
-    if (sel.options.length <= 1) PIPELINE_ESTADOS.forEach(e => sel.innerHTML += `<option value="${e.id}">${e.id}</option>`);
+    if (sel.options.length <= 1) PIPELINE_ESTADOS.forEach(e => sel.innerHTML += '<option value="' + e.id + '">' + e.id + '</option>');
 
     mapMarkers.forEach(m => map.removeLayer(m));
     mapMarkers = [];
 
     const estadoF = document.getElementById('mapaFilterEstado')?.value || '';
     const scoreF = document.getElementById('mapaFilterScore')?.value || '';
+    const negocioF = document.getElementById('mapaFilterNegocio')?.value || '';
+    const verticalF = document.getElementById('mapaFilterVertical')?.value || '';
+    const impulsaF = document.getElementById('mapaFilterImpulsa')?.value || '';
+
+    var matchCount = 0;
+    var totalGeo = 0;
 
     DB.suelos.forEach(s => {
         if (!s.latitud || !s.longitud) return;
+        totalGeo++;
+
+        // Filter: estado
         if (estadoF && s.pipeline_estado !== estadoF) return;
+        // Filter: score
         if (scoreF === 'muy' && s.score_total < 85) return;
         if (scoreF === 'inter' && (s.score_total < 70 || s.score_total >= 85)) return;
         if (scoreF === 'media' && (s.score_total < 50 || s.score_total >= 70)) return;
         if (scoreF === 'baja' && s.score_total >= 50) return;
+        // Filter: negocio
+        if (negocioF && (s.negocio || 'Cooperativa') !== negocioF) return;
+        // Filter: vertical
+        if (verticalF && (s.vertical || 'Living') !== verticalF) return;
+        // Filter: impulsa
+        if (impulsaF && (s.impulsa || 'No') !== impulsaF) return;
 
+        matchCount++;
         const sc = getScoreClass(s.score_total);
+        const impulsaBadge = s.impulsa === 'Sí' ? '<span style="background:#d1fae5;color:#059669;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;">IMPULSA</span> ' : '';
         const marker = L.circleMarker([s.latitud, s.longitud], {
-            radius: 8, fillColor: sc.color, color: '#fff', weight: 2, fillOpacity: .8
+            radius: s.impulsa === 'Sí' ? 10 : 8,
+            fillColor: sc.color,
+            color: s.impulsa === 'Sí' ? '#059669' : '#fff',
+            weight: s.impulsa === 'Sí' ? 3 : 2,
+            fillOpacity: .8
         }).addTo(map);
-        marker.bindPopup(`<div style="min-width:200px;"><strong>${s.nombre}</strong><br>${s.ciudad}<br>Score: <strong>${s.score_total}</strong> (${sc.label})<br>Estado: ${s.pipeline_estado}<br>${fmtMoney(s.inversion_estimada)}<br><br><a href="#" onclick="showDetalle('${s.id}');return false;" style="color:var(--primary);">Ver detalle →</a></div>`);
+        marker.bindPopup('<div style="min-width:220px;">' + impulsaBadge + '<strong>' + s.nombre + '</strong><br>' + s.ciudad + '<br>Score: <strong>' + s.score_total + '</strong> (' + sc.label + ')<br>Estado: ' + s.pipeline_estado + '<br>Negocio: ' + (s.negocio||'Cooperativa') + ' | Vertical: ' + (s.vertical||'Living') + '<br>' + fmtMoney(s.inversion_estimada) + '<br><br><a href="#" onclick="showDetalle(\'' + s.id + '\');return false;" style="color:var(--primary);">Ver detalle →</a></div>');
         mapMarkers.push(marker);
     });
+
+    // Update counter
+    var countEl = document.getElementById('mapaCount');
+    if (countEl) countEl.textContent = matchCount + ' de ' + totalGeo + ' oportunidades geolocalizadas';
 
     if (mapMarkers.length) {
         const group = L.featureGroup(mapMarkers);
@@ -4875,6 +4932,7 @@ function cleanImportedData() {
         // Normalize negocio
         if (!s.negocio || s.negocio === 'N/D') s.negocio = 'Cooperativa';
         if (s.negocio === 'P. Libre') s.negocio = 'Venta libre';
+            if (!s.impulsa) s.impulsa = 'No';
         // Normalize pipeline_estado (legacy "Compra" → "Fase 1: Compra del suelo")
         if (s.pipeline_estado === 'Compra') s.pipeline_estado = 'Fase 1: Compra del suelo';
         // Ensure vertical has value
@@ -5429,6 +5487,7 @@ const DEFAULT_PLANTILLA = [
     { id: 'rentabilidad_estimada', label: 'Rentabilidad estimada (%)', visible: false, obligatorio: false, defecto: '', tipo: 'numero', grupo: 'economico' },
     { id: 'vertical', label: 'Vertical de negocio', visible: true, obligatorio: false, defecto: 'Living', tipo: 'select', grupo: 'clasificacion', opciones: ['Living','Inversión Patrimonial','Investment'] },
     { id: 'negocio', label: 'Tipo de negocio', visible: true, obligatorio: false, defecto: 'Cooperativa', tipo: 'select', grupo: 'clasificacion', opciones: ['Cooperativa','Venta libre','Hotel','BTR','Otros'] },
+    { id: 'impulsa', label: 'Impulsa', visible: true, obligatorio: false, defecto: 'No', tipo: 'select', grupo: 'clasificacion', opciones: ['No','Sí'] },
     { id: 'observaciones', label: 'Observaciones', visible: true, obligatorio: false, defecto: '', tipo: 'textarea', grupo: 'otros' },
 ];
 
