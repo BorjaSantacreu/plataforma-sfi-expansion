@@ -1246,7 +1246,7 @@ body.visor-mode select[onchange*="changePipelineEstado"] { pointer-events: none;
 
     <div class="grid-3">
         <!-- Config Card -->
-        <div class="card" style="grid-column:span 2;">
+        <div class="card visor-hide" style="grid-column:span 2;">
             <h3 style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:12px;"><i class="fas fa-plug" style="color:var(--gold);"></i> Conexión Supabase</h3>
             <p style="font-size:12px;color:#64748b;margin-bottom:16px;">Conecta con Supabase para sincronizar datos entre todos los usuarios en tiempo real. Los datos locales se migrarán automáticamente.</p>
 
@@ -1281,7 +1281,7 @@ body.visor-mode select[onchange*="changePipelineEstado"] { pointer-events: none;
     </div>
 
     <!-- Migration tools -->
-    <div class="card mt-16">
+    <div class="card mt-16 visor-hide">
         <h3 style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:12px;"><i class="fas fa-exchange-alt" style="color:var(--gold);"></i> Herramientas de Migración</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-outline" onclick="migrateLocalToSupabase()"><i class="fas fa-upload"></i> Subir datos locales a Supabase</button>
@@ -1294,7 +1294,7 @@ body.visor-mode select[onchange*="changePipelineEstado"] { pointer-events: none;
     </div>
 
     <!-- Setup Guide -->
-    <div class="card mt-16" style="background:#eff6ff;border:1px solid #bfdbfe;">
+    <div class="card mt-16 visor-hide" style="background:#eff6ff;border:1px solid #bfdbfe;">
         <h3 style="font-size:14px;font-weight:600;color:#1e40af;margin-bottom:8px;"><i class="fas fa-book"></i> Guía de configuración</h3>
         <ol style="font-size:12px;color:#1e40af;line-height:2;padding-left:20px;">
             <li>Crea cuenta gratuita en <strong>supabase.com</strong></li>
@@ -2054,7 +2054,7 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-ES') : '-'; 
 // ============================================================
 function navigateTo(page) {
     // Visor: restrict to allowed pages only
-    if (isVisor() && ['pipeline','mapa','fase0','fase1','seguimiento'].indexOf(page) === -1) {
+    if (isVisor() && ['pipeline','mapa','fase0','fase1','seguimiento','basedatos'].indexOf(page) === -1) {
         page = 'pipeline';
     }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -6488,7 +6488,7 @@ function applyVisorRestrictions() {
     var sub = document.querySelector('.subtitle');
     if (sub) sub.innerHTML = 'Pipeline IMPULSA <span style="background:#C4A55A;color:#fff;font-size:9px;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:700;">VISOR</span>';
     // 4. Hide sidebar items not allowed
-    var allowed = ['pipeline','mapa','fase0','fase1','seguimiento'];
+    var allowed = ['pipeline','mapa','fase0','fase1','seguimiento','basedatos'];
     document.querySelectorAll('.nav-item[data-page]').forEach(function(item) {
         if (allowed.indexOf(item.getAttribute('data-page')) === -1) item.style.display = 'none';
     });
