@@ -1,0 +1,30 @@
+name: VPP Monitor - Ingesta diaria
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Días hacia atrás (usar 400 en el PRIMER run)"
+        required: false
+        default: "35"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        working-directory: ingest
+        run: pip install -r requirements.txt
+      - name: Ejecutar ingesta
+        working-directory: ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '35' }}
+        run: python ingest.py
