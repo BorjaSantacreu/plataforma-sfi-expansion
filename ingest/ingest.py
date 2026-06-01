@@ -341,7 +341,14 @@ def main():
             rec["updated_at"] = now_iso
             candidatos.append(rec)
 
-    print(f"Leídas {leidas} entradas · {len(candidatos)} candidatos VPP")
+    # Deduplicar por (expediente, fuente) — quedarse con la versión más reciente
+    seen = {}
+    for rec in candidatos:
+        key = (rec["expediente"], rec["fuente"])
+        seen[key] = rec  # la última aparición sobreescribe
+    candidatos = list(seen.values())
+
+    print(f"Leídas {leidas} entradas · {len(candidatos)} candidatos VPP (dedup)")
     error = None
     n = 0
     try:
