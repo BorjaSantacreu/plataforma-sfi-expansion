@@ -9,9 +9,14 @@ on:
         description: "Días hacia atrás (usar 400 en el PRIMER run)"
         required: false
         default: "35"
+      fuentes:
+        description: "Fuentes a ejecutar (all / placsp / boe)"
+        required: false
+        default: "all"
 
 jobs:
-  ingest:
+  placsp:
+    if: ${{ github.event.inputs.fuentes != 'boe' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,10 +26,29 @@ jobs:
       - name: Instalar dependencias
         working-directory: ingest
         run: pip install -r requirements.txt
-      - name: Ejecutar ingesta
+      - name: Ingesta PLACSP + Agregadas
         working-directory: ingest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '35' }}
         run: python ingest.py
+
+  boe:
+    if: ${{ github.event.inputs.fuentes != 'placsp' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        working-directory: ingest
+        run: pip install -r requirements.txt
+      - name: Ingesta BOE
+        working-directory: ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BOE_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '35' }}
+        run: python boe_ingest.py
