@@ -1,13 +1,14 @@
 """
-EEMM · Monitor VPP — Notificación semanal por email.
+EEMM · Monitor VPP — Notificación semanal por email via Microsoft Graph API.
 
 Consulta Supabase por licitaciones nuevas (últimos 7 días) y urgentes (plazo ≤7 días),
-genera un email HTML con resumen y lo envía via Resend API.
+genera un email HTML con resumen y lo envía via Microsoft Graph (Azure AD App Registration).
 
 Variables de entorno:
   SUPABASE_URL, SUPABASE_SERVICE_KEY
-  RESEND_API_KEY
-  NOTIFY_EMAIL  (default: bsantacreu@sficonsulting.es)
+  MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
+  NOTIFY_EMAIL     (default: bsantacreu@sficonsulting.es)
+  NOTIFY_FROM      (default: bsantacreu@sficonsulting.es)
 """
 import os
 import sys
@@ -16,16 +17,36 @@ import requests
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+MS_TENANT_ID = os.environ.get("MS_TENANT_ID", "")
+MS_CLIENT_ID = os.environ.get("MS_CLIENT_ID", "")
+MS_CLIENT_SECRET = os.environ.get("MS_CLIENT_SECRET", "")
 NOTIFY_EMAIL = os.environ.get("NOTIFY_EMAIL", "bsantacreu@sficonsulting.es")
+NOTIFY_FROM = os.environ.get("NOTIFY_FROM", "bsantacreu@sficonsulting.es")
 
 ESTADOS_CERRADOS = ["Adjudicada", "Resuelta", "Desierta", "Anulada", "Parcialmente adjudicada"]
 
 PLATFORM_URL = "https://lively-plant-019445f1e.2.azurestaticapps.net/"
 
 
+def get_ms_token():
+    """Obtiene un access token de Microsoft Graph via client credentials."""
+    r = requests.post(
+        f"https://login.microsoftonline.com/{MS_TENANT_ID}/oauth2/v2.0/token",
+        data={
+            "client_id": MS_CLIENT_ID,
+            "client_secret": MS_CLIENT_SECRET,
+            "scope": "https://graph.microsoft.com/.default",
+            "grant_type": "client_credentials",
+        },
+        timeout=30,
+    )
+    if r.status_code >= 300:
+        print(f"[error] MS token {r.status_code}: {r.text[:300]}", file=sys.stderr)
+        r.raise_for_status()
+    return r.json()["access_token"]
+
+
 def fetch_licitaciones():
-    """Trae todas las licitaciones no cerradas de los últimos 90 días."""
     cols = "id,expediente,fuente,url,objeto,organo,tipo_vpp,naturaleza,num_viviendas,score,municipio,provincia,ccaa,estado,fecha_publicacion,fecha_limite,importe_base,valor_estimado,estado_interno,responsable_vpp,prioridad"
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/vpp_licitaciones?select={cols}&order=score.desc&limit=5000",
@@ -67,14 +88,10 @@ def build_email(all_rows):
     hoy = dt.date.today()
     hace7d = (hoy - dt.timedelta(days=7)).isoformat()
 
-    # Filtrar activas (no cerradas, no vencidas, no descartadas SFI)
     activas = [r for r in all_rows if estado_real(r) not in ESTADOS_CERRADOS + ["Vencida"] and r.get("estado_interno") != "Descartada SFI"]
-
-    # Nuevas esta semana
     nuevas = [r for r in activas if r.get("fecha_publicacion") and r["fecha_publicacion"] >= hace7d]
     nuevas.sort(key=lambda r: r.get("score", 0), reverse=True)
 
-    # Urgentes (plazo ≤7 días)
     urgentes = []
     for r in activas:
         d = dias_restantes(r.get("fecha_limite"))
@@ -83,16 +100,12 @@ def build_email(all_rows):
             urgentes.append(r)
     urgentes.sort(key=lambda r: r["_dias"])
 
-    # Top scoring
     top = sorted(activas, key=lambda r: r.get("score", 0), reverse=True)[:5]
-
-    # Favoritas en seguimiento
     en_seguimiento = [r for r in all_rows if r.get("estado_interno") == "En seguimiento"]
 
     if not nuevas and not urgentes:
-        return None  # Nada que reportar
+        return None
 
-    # Construir HTML
     gold = "#C9A84C"
     navy = "#0E2841"
 
@@ -103,7 +116,6 @@ def build_email(all_rows):
         if show_dias and "_dias" in r:
             d = r["_dias"]
             dias_txt = f' <span style="color:#DC2626;font-weight:700;">{"¡HOY!" if d == 0 else f"{d}d"}</span>'
-        link = r.get("url", "")
         return f"""
         <tr style="border-bottom:1px solid #e2e8f0;">
             <td style="padding:8px 10px;font-size:13px;max-width:300px;">
@@ -135,7 +147,6 @@ def build_email(all_rows):
             <div style="color:#8A9AB5;font-size:13px;margin-top:4px;">{hoy.strftime('%d/%m/%Y')} · {len(activas)} licitaciones activas</div>
         </div>
         <div style="padding:20px 24px;">
-
             <div style="display:flex;gap:12px;margin-bottom:20px;">
                 <div style="flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px;text-align:center;">
                     <div style="font-size:24px;font-weight:700;color:#16A34A;">{len(nuevas)}</div>
@@ -188,38 +199,40 @@ def build_email(all_rows):
     return html
 
 
-def send_email(html, nuevas_count, urgentes_count):
-    """Envía via Resend API."""
+def send_email(token, html, nuevas_count, urgentes_count):
+    """Envía via Microsoft Graph API."""
     hoy = dt.date.today().strftime("%d/%m/%Y")
     subject = f"🏗️ VPP Semanal: {nuevas_count} nuevas"
     if urgentes_count:
         subject += f", {urgentes_count} urgentes"
 
     r = requests.post(
-        "https://api.resend.com/emails",
+        f"https://graph.microsoft.com/v1.0/users/{NOTIFY_FROM}/sendMail",
         headers={
-            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         },
         json={
-            "from": "SFI Monitor VPP <onboarding@resend.dev>",
-            "to": [NOTIFY_EMAIL],
-            "subject": subject,
-            "html": html,
+            "message": {
+                "subject": subject,
+                "body": {"contentType": "HTML", "content": html},
+                "toRecipients": [{"emailAddress": {"address": NOTIFY_EMAIL}}],
+            },
+            "saveToSentItems": "false",
         },
         timeout=30,
     )
     if r.status_code >= 300:
-        print(f"[error] Resend {r.status_code}: {r.text[:300]}", file=sys.stderr)
+        print(f"[error] Graph {r.status_code}: {r.text[:400]}", file=sys.stderr)
         r.raise_for_status()
-    print(f"✅ Email enviado a {NOTIFY_EMAIL}")
+    print(f"✅ Email enviado a {NOTIFY_EMAIL} desde {NOTIFY_FROM}")
 
 
 def main():
     if not SUPABASE_URL or not SUPABASE_KEY:
         sys.exit("Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY")
-    if not RESEND_API_KEY:
-        print("[warn] RESEND_API_KEY no configurada — generando HTML pero no enviando", file=sys.stderr)
+    if not MS_TENANT_ID or not MS_CLIENT_ID or not MS_CLIENT_SECRET:
+        print("[warn] MS_TENANT_ID/MS_CLIENT_ID/MS_CLIENT_SECRET no configurados — generando HTML pero no enviando", file=sys.stderr)
 
     all_rows = fetch_licitaciones()
     print(f"Cargadas {len(all_rows)} licitaciones")
@@ -229,17 +242,16 @@ def main():
         print("Sin novedades esta semana — no se envía email")
         return
 
-    # Contar para el subject
     hoy = dt.date.today()
     hace7d = (hoy - dt.timedelta(days=7)).isoformat()
     activas = [r for r in all_rows if estado_real(r) not in ESTADOS_CERRADOS + ["Vencida"]]
     nuevas = len([r for r in activas if r.get("fecha_publicacion") and r["fecha_publicacion"] >= hace7d])
     urgentes = len([r for r in activas if dias_restantes(r.get("fecha_limite")) is not None and 0 <= dias_restantes(r.get("fecha_limite")) <= 7])
 
-    if RESEND_API_KEY:
-        send_email(html, nuevas, urgentes)
+    if MS_TENANT_ID and MS_CLIENT_ID and MS_CLIENT_SECRET:
+        token = get_ms_token()
+        send_email(token, html, nuevas, urgentes)
     else:
-        # Guardar HTML para preview
         with open("/tmp/vpp_email_preview.html", "w") as f:
             f.write(html)
         print("Preview guardado en /tmp/vpp_email_preview.html")
