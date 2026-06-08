@@ -80,14 +80,17 @@ function fmtRangoES(from, to) {
     return 'Semana del ' + from.getDate() + ' de ' + meses[from.getMonth()] + ' al ' + to.getDate() + ' de ' + meses[to.getMonth()] + ' de ' + from.getFullYear();
 }
 
-function fmtMoney(n) {
-    if (n == null || isNaN(n)) return '—';
-    return Number(n).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €';
-}
-
 function fmtNum(n) {
     if (n == null || isNaN(n)) return '—';
-    return Number(n).toLocaleString('es-ES', { maximumFractionDigits: 0 });
+    var x = Math.round(Number(n));
+    var sign = x < 0 ? '-' : '';
+    x = Math.abs(x);
+    return sign + String(x).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function fmtMoney(n) {
+    if (n == null || isNaN(n)) return '—';
+    return fmtNum(n) + ' €';
 }
 
 function escapeHTML(s) {
@@ -176,7 +179,7 @@ function buildDigestHTML(data) {
             html += '<div style="margin-top:14px;font-size:13px;font-weight:600;color:' + NAVY + ';">' + vg + ' <span style="color:#64748b;font-weight:400;font-size:12px;">(' + list.length + ')</span></div>';
             html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px;">';
             html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-            ['Score', 'Nombre', 'Ciudad', 'Negocio', 'Viv.', 'm²t', '€/m²t', 'Precio suelo'].forEach(function (h) {
+            ['Score', 'Nombre', 'Ciudad', 'Negocio', 'Viv.', 'm²t', '€/m²t', 'Precio suelo', 'Ficha'].forEach(function (h) {
                 html += '<th style="padding:8px 8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
             });
             html += '</tr></thead><tbody>';
@@ -193,6 +196,7 @@ function buildDigestHTML(data) {
                 html += '<td style="padding:8px;color:#475569;">' + (s.superficie_edificable ? fmtNum(s.superficie_edificable) + ' m²' : '—') + '</td>';
                 html += '<td style="padding:8px;color:#475569;">' + (s.precio_m2t ? fmtNum(s.precio_m2t) + ' €' : '—') + '</td>';
                 html += '<td style="padding:8px;color:#475569;">' + fmtMoney(s.precio_suelo) + '</td>';
+                html += '<td style="padding:8px;"><a href="' + fichaUrl(s.id) + '" style="display:inline-block;background:' + GOLD + ';color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none;white-space:nowrap;">Abrir →</a></td>';
                 html += '</tr>';
             });
             html += '</tbody></table>';
@@ -207,7 +211,7 @@ function buildDigestHTML(data) {
     } else {
         html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;font-size:12px;">';
         html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-        ['Nombre', 'Ciudad', 'Días en Fase 0', 'm²t', '€/m²t', 'Movido por'].forEach(function (h) {
+        ['Nombre', 'Ciudad', 'Días en Fase 0', 'm²t', '€/m²t', 'Movido por', 'Ficha'].forEach(function (h) {
             html += '<th style="padding:8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
         });
         html += '</tr></thead><tbody>';
@@ -219,6 +223,7 @@ function buildDigestHTML(data) {
             html += '<td style="padding:8px;color:#475569;">' + (m.suelo.superficie_edificable ? fmtNum(m.suelo.superficie_edificable) + ' m²' : '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + (m.suelo.precio_m2t ? fmtNum(m.suelo.precio_m2t) + ' €' : '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.usuario || '—') + '</td>';
+            html += '<td style="padding:8px;"><a href="' + fichaUrl(m.suelo.id) + '" style="display:inline-block;background:' + GOLD + ';color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none;white-space:nowrap;">Abrir →</a></td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -232,7 +237,7 @@ function buildDigestHTML(data) {
     } else {
         html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;font-size:12px;">';
         html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-        ['Nombre', 'Ciudad', 'Días desde captación', 'Motivo'].forEach(function (h) {
+        ['Nombre', 'Ciudad', 'Días desde captación', 'Motivo', 'Ficha'].forEach(function (h) {
             html += '<th style="padding:8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
         });
         html += '</tr></thead><tbody>';
@@ -243,6 +248,7 @@ function buildDigestHTML(data) {
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.ciudad || '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + (m.diasDesdeCapt != null ? m.diasDesdeCapt + ' d' : '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;font-size:11px;max-width:240px;">' + escapeHTML(String(motivo).substring(0, 140)) + '</td>';
+            html += '<td style="padding:8px;"><a href="' + fichaUrl(m.suelo.id) + '" style="display:inline-block;background:' + GOLD + ';color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none;white-space:nowrap;">Abrir →</a></td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
