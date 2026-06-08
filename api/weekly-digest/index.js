@@ -135,6 +135,8 @@ function buildDigestHTML(data) {
     var totalSeguim = data.movSeguim.length;
     var invTotal = data.nuevas.reduce(function (s, x) { return s + (Number(x.precio_suelo) || 0); }, 0);
     var hhnnTotal = data.nuevas.reduce(function (s, x) { var h = calcHHNNEstimado(x); return s + (h || 0); }, 0);
+    var nuevasScore70 = data.nuevas.filter(function (x) { return (Number(x.score_total) || 0) >= 70; }).length;
+    var totalViviendas = data.nuevas.reduce(function (s, x) { return s + (Number(x.num_viviendas) || 0); }, 0);
 
     var html = '<div style="font-family:Calibri,Arial,sans-serif;max-width:720px;margin:0 auto;background:#fff;color:#1e293b;">';
     html += '<div style="background:' + NAVY + ';padding:24px 28px;">';
@@ -150,8 +152,8 @@ function buildDigestHTML(data) {
         { v: totalNuevas, l: 'Nuevas captadas', c: '#0ea5e9' },
         { v: totalFase1, l: 'Pasaron a Fase 1', c: '#16a34a' },
         { v: totalSeguim, l: 'Pasaron a Seguimiento', c: '#f59e0b' },
-        { v: fmtMoney(invTotal), l: 'Inversión nuevas', c: '#8b5cf6' },
-        { v: fmtMoney(hhnnTotal), l: 'HHNN potenciales', c: GOLD }
+        { v: nuevasScore70, l: 'Score ≥70', c: '#8b5cf6' },
+        { v: fmtNum(totalViviendas), l: 'Viviendas captadas', c: GOLD }
     ].forEach(function (k) {
         html += '<td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;vertical-align:top;width:20%;">';
         html += '<div style="font-size:20px;font-weight:700;color:' + k.c + ';line-height:1.2;">' + k.v + '</div>';
@@ -174,7 +176,7 @@ function buildDigestHTML(data) {
             html += '<div style="margin-top:14px;font-size:13px;font-weight:600;color:' + NAVY + ';">' + vg + ' <span style="color:#64748b;font-weight:400;font-size:12px;">(' + list.length + ')</span></div>';
             html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px;">';
             html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-            ['Score', 'Nombre', 'Ciudad', 'Negocio', 'Viv.', 'Precio suelo', 'HHNN est.', 'Resp.'].forEach(function (h) {
+            ['Score', 'Nombre', 'Ciudad', 'Negocio', 'Viv.', 'm²t', '€/m²t', 'Precio suelo'].forEach(function (h) {
                 html += '<th style="padding:8px 8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
             });
             html += '</tr></thead><tbody>';
@@ -188,9 +190,9 @@ function buildDigestHTML(data) {
                 html += '<td style="padding:8px;color:#475569;">' + escapeHTML(s.ciudad || '—') + '</td>';
                 html += '<td style="padding:8px;color:#475569;">' + escapeHTML(s.negocio || '—') + '</td>';
                 html += '<td style="padding:8px;color:#475569;">' + fmtNum(s.num_viviendas) + '</td>';
+                html += '<td style="padding:8px;color:#475569;">' + (s.superficie_edificable ? fmtNum(s.superficie_edificable) + ' m²' : '—') + '</td>';
+                html += '<td style="padding:8px;color:#475569;">' + (s.precio_m2t ? fmtNum(s.precio_m2t) + ' €' : '—') + '</td>';
                 html += '<td style="padding:8px;color:#475569;">' + fmtMoney(s.precio_suelo) + '</td>';
-                html += '<td style="padding:8px;color:#475569;">' + fmtMoney(calcHHNNEstimado(s)) + '</td>';
-                html += '<td style="padding:8px;color:#475569;">' + escapeHTML(s.responsable || '—') + '</td>';
                 html += '</tr>';
             });
             html += '</tbody></table>';
@@ -205,7 +207,7 @@ function buildDigestHTML(data) {
     } else {
         html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;font-size:12px;">';
         html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-        ['Nombre', 'Ciudad', 'Días en Fase 0', 'HHNN', 'Responsable', 'Movido por'].forEach(function (h) {
+        ['Nombre', 'Ciudad', 'Días en Fase 0', 'm²t', '€/m²t', 'Movido por'].forEach(function (h) {
             html += '<th style="padding:8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
         });
         html += '</tr></thead><tbody>';
@@ -214,8 +216,8 @@ function buildDigestHTML(data) {
             html += '<td style="padding:8px;"><a href="' + fichaUrl(m.suelo.id) + '" style="color:' + NAVY + ';font-weight:600;text-decoration:none;">' + escapeHTML(m.suelo.nombre || '—') + '</a></td>';
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.ciudad || '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + (m.diasFase0 != null ? m.diasFase0 + ' d' : '—') + '</td>';
-            html += '<td style="padding:8px;color:#475569;">' + fmtMoney(calcHHNNEstimado(m.suelo)) + '</td>';
-            html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.responsable || '—') + '</td>';
+            html += '<td style="padding:8px;color:#475569;">' + (m.suelo.superficie_edificable ? fmtNum(m.suelo.superficie_edificable) + ' m²' : '—') + '</td>';
+            html += '<td style="padding:8px;color:#475569;">' + (m.suelo.precio_m2t ? fmtNum(m.suelo.precio_m2t) + ' €' : '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.usuario || '—') + '</td>';
             html += '</tr>';
         });
@@ -230,7 +232,7 @@ function buildDigestHTML(data) {
     } else {
         html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;font-size:12px;">';
         html += '<thead><tr style="background:#f1f5f9;color:#475569;">';
-        ['Nombre', 'Ciudad', 'Días desde captación', 'Motivo', 'Responsable'].forEach(function (h) {
+        ['Nombre', 'Ciudad', 'Días desde captación', 'Motivo'].forEach(function (h) {
             html += '<th style="padding:8px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">' + h + '</th>';
         });
         html += '</tr></thead><tbody>';
@@ -241,7 +243,6 @@ function buildDigestHTML(data) {
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.ciudad || '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;">' + (m.diasDesdeCapt != null ? m.diasDesdeCapt + ' d' : '—') + '</td>';
             html += '<td style="padding:8px;color:#475569;font-size:11px;max-width:240px;">' + escapeHTML(String(motivo).substring(0, 140)) + '</td>';
-            html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.responsable || '—') + '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -267,7 +268,7 @@ async function gatherData(context) {
 
     if (context && context.log) context.log('Ventana: ' + fromYMD + ' → ' + toYMD);
 
-    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,pvp_zona_manual,score_total,responsable,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD, context);
+    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,precio_m2t,pvp_zona_manual,score_total,responsable,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD, context);
     var actividades = await sbGet('actividades?select=*&tipo=eq.cambio_fase&fecha=gte.' + fromISO + '&fecha=lt.' + toExclusiveISO, context);
 
     var movFase1 = [];
@@ -292,7 +293,7 @@ async function gatherData(context) {
     var sueloMap = {};
     nuevas.forEach(function (s) { sueloMap[s.id] = s; });
     if (ids.length) {
-        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,pvp_zona_manual,superficie_edificable&id=in.(' + ids.join(',') + ')';
+        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,pvp_zona_manual,superficie_edificable,precio_m2t&id=in.(' + ids.join(',') + ')';
         var sueloRows = await sbGet(query, context);
         sueloRows.forEach(function (s) { sueloMap[s.id] = s; });
     }
