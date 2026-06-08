@@ -391,12 +391,32 @@ module.exports = async function (context, req) {
             context.res = { status: 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify({ html: htmlF, emails: emailsF, subject: subjectF, counts: countsF }) };
             return;
         }
-        var result = await runDigest(context);
-        var statusCode;
-        if (result.ok) statusCode = 200;
-        else if (result.reason === 'grupo5 sin emails') statusCode = 200;
-        else statusCode = 500;
-        context.res = { status: statusCode, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify(result) };
+        // POST sin params: devuelve {html, emails, subject, counts} igual que ?fmt=full
+        // El envío real lo hace SIEMPRE el workflow de GitHub Actions (que tiene MS_CLIENT_SECRET).
+        // El botón "Enviar ahora" de la UI debe redirigir a GitHub Actions, no esperar envío aquí.
+        var dataP = await gatherData(context);
+        var htmlP = buildDigestHTML({ from: dataP.win.from, to: dataP.win.to, nuevas: dataP.nuevas, movFase1: dataP.movFase1, movSeguim: dataP.movSeguim });
+        var emailsP = [];
+        try {
+            var cfgP = await sbGet('configuracion?clave=eq.emailGroups&select=valor', context);
+            if (cfgP && cfgP[0] && cfgP[0].valor && cfgP[0].valor.grupo5) {
+                emailsP = cfgP[0].valor.grupo5.emails || [];
+            }
+        } catch (eP) { /* devolvemos lista vacía */ }
+        var subjectP = '[SFI Expansión] ' + fmtRangoES(dataP.win.from, dataP.win.to) + ' — ' + dataP.nuevas.length + ' nuevas, ' + dataP.movFase1.length + ' a Fase 1';
+        var countsP = { nuevas: dataP.nuevas.length, movFase1: dataP.movFase1.length, movSeguim: dataP.movSeguim.length };
+        context.res = { status: 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS),
+            body: JSON.stringify({
+                ok: true,
+                ready: true,
+                html: htmlP,
+                emails: emailsP,
+                subject: subjectP,
+                counts: countsP,
+                info: 'Vista previa generada. El envío del correo lo gestiona GitHub Actions automáticamente cada lunes 08:00. Para enviarlo manualmente ahora, dispara el workflow en GitHub Actions.',
+                workflow_url: 'https://github.com/BorjaSantacreu/plataforma-sfi-expansion/actions/workflows/weekly-digest.yml'
+            })
+        };
     } catch (e) {
         context.log.error('weekly-digest error:', e.message, e.stack);
         context.res = { status: 500, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS),
