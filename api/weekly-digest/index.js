@@ -112,13 +112,11 @@ function getVerticalGroup(s) {
 }
 
 function calcHHNNEstimado(s) {
-    if (s.hhnn_estimados) return Number(s.hhnn_estimados);
-    var pct = s.pct_hhnn;
-    if (!pct) {
-        if (s.negocio === 'Cooperativa') pct = 11;
-        else if (s.negocio === 'Venta libre') pct = 6;
-        else pct = 5;
-    }
+    // hhnn_estimados y pct_hhnn no son columnas reales en Supabase; se calculan por defecto del negocio
+    var pct;
+    if (s.negocio === 'Cooperativa') pct = 11;
+    else if (s.negocio === 'Venta libre') pct = 6;
+    else pct = 5;
     var pvp = s.pvp_zona_manual || 0;
     var edif = s.superficie_edificable || 0;
     if (pvp && edif) return (pct / 100) * pvp * edif;
@@ -269,7 +267,7 @@ async function gatherData(context) {
 
     if (context && context.log) context.log('Ventana: ' + fromYMD + ' → ' + toYMD);
 
-    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,pvp_zona_manual,score_total,responsable,hhnn_estimados,pct_hhnn,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD, context);
+    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,pvp_zona_manual,score_total,responsable,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD, context);
     var actividades = await sbGet('actividades?select=*&tipo=eq.cambio_fase&fecha=gte.' + fromISO + '&fecha=lt.' + toExclusiveISO, context);
 
     var movFase1 = [];
@@ -294,7 +292,7 @@ async function gatherData(context) {
     var sueloMap = {};
     nuevas.forEach(function (s) { sueloMap[s.id] = s; });
     if (ids.length) {
-        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,hhnn_estimados,pct_hhnn,pvp_zona_manual,superficie_edificable&id=in.(' + ids.join(',') + ')';
+        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,pvp_zona_manual,superficie_edificable&id=in.(' + ids.join(',') + ')';
         var sueloRows = await sbGet(query, context);
         sueloRows.forEach(function (s) { sueloMap[s.id] = s; });
     }
