@@ -360,11 +360,28 @@ module.exports = async function (context, req) {
         return;
     }
     var preview = req && req.query && req.query.preview === '1';
+    var fmtFull = req && req.query && req.query.fmt === 'full';
     try {
         if (preview) {
             var data = await gatherData(context);
             var html = buildDigestHTML({ from: data.win.from, to: data.win.to, nuevas: data.nuevas, movFase1: data.movFase1, movSeguim: data.movSeguim });
             context.res = { status: 200, headers: Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, CORS), body: html };
+            return;
+        }
+        if (fmtFull) {
+            // Modo "full": devuelve {html, emails, subject, counts} para que un cliente externo (workflow) envíe el email
+            var dataF = await gatherData(context);
+            var htmlF = buildDigestHTML({ from: dataF.win.from, to: dataF.win.to, nuevas: dataF.nuevas, movFase1: dataF.movFase1, movSeguim: dataF.movSeguim });
+            var emailsF = [];
+            try {
+                var cfgF = await sbGet('configuracion?clave=eq.emailGroups&select=valor', context);
+                if (cfgF && cfgF[0] && cfgF[0].valor && cfgF[0].valor.grupo5) {
+                    emailsF = cfgF[0].valor.grupo5.emails || [];
+                }
+            } catch (eF) { /* devolvemos lista vacía */ }
+            var subjectF = '[SFI Expansión] ' + fmtRangoES(dataF.win.from, dataF.win.to) + ' — ' + dataF.nuevas.length + ' nuevas, ' + dataF.movFase1.length + ' a Fase 1';
+            var countsF = { nuevas: dataF.nuevas.length, movFase1: dataF.movFase1.length, movSeguim: dataF.movSeguim.length };
+            context.res = { status: 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify({ html: htmlF, emails: emailsF, subject: subjectF, counts: countsF }) };
             return;
         }
         var result = await runDigest(context);
