@@ -40,20 +40,19 @@ jobs:
             echo "$BODY" | head -c 500
             exit 1
           fi
-          # Guardar JSON en archivo para uso posterior
-          echo "$BODY" > /tmp/digest.json
-          # Extraer counts y emails para log
-          COUNTS=$(echo "$BODY" | python3 -c "import sys, json; d = json.load(sys.stdin); print(d['counts'])")
-          EMAILS_COUNT=$(echo "$BODY" | python3 -c "import sys, json; d = json.load(sys.stdin); print(len(d['emails']))")
+          # Guardar JSON en el workspace para los siguientes steps
+          echo "$BODY" > digest.json
+          COUNTS=$(python3 -c "import json; d = json.load(open('digest.json')); print(d['counts'])")
+          EMAILS_COUNT=$(python3 -c "import json; d = json.load(open('digest.json')); print(len(d['emails']))")
           echo "Counts: $COUNTS"
           echo "Destinatarios: $EMAILS_COUNT"
+          echo "emails_count=$EMAILS_COUNT" >> $GITHUB_OUTPUT
           if [ "$EMAILS_COUNT" = "0" ]; then
             echo "::warning::Grupo 5 sin emails configurados — no se envía nada. Añádelos en la UI."
-            exit 0
           fi
 
       - name: Obtener token Microsoft Graph
-        if: steps.tz.outputs.go == 'true' && success() && hashFiles('/tmp/digest.json') != ''
+        if: steps.tz.outputs.go == 'true' && steps.digest.outputs.emails_count != '0' && steps.digest.outputs.emails_count != ''
         id: token
         env:
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
@@ -64,12 +63,17 @@ jobs:
             echo "::error::Falta el secret MS_CLIENT_SECRET en GitHub Secrets del repo"
             exit 1
           fi
-          TOKEN=$(curl -sS -X POST \
+          if [ -z "$MS_TENANT_ID" ] || [ -z "$MS_CLIENT_ID" ]; then
+            echo "::error::Faltan MS_TENANT_ID o MS_CLIENT_ID en GitHub Secrets"
+            exit 1
+          fi
+          RESP=$(curl -sS -X POST \
             "https://login.microsoftonline.com/$MS_TENANT_ID/oauth2/v2.0/token" \
-            -d "client_id=$MS_CLIENT_ID&client_secret=$MS_CLIENT_SECRET&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&grant_type=client_credentials" \
-            | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))")
+            -d "client_id=$MS_CLIENT_ID&client_secret=$MS_CLIENT_SECRET&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&grant_type=client_credentials")
+          TOKEN=$(echo "$RESP" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))")
           if [ -z "$TOKEN" ]; then
-            echo "::error::No se pudo obtener token Graph (revisa MS_TENANT_ID/CLIENT_ID/SECRET)"
+            echo "::error::No se pudo obtener token Graph"
+            echo "$RESP" | head -c 500
             exit 1
           fi
           echo "::add-mask::$TOKEN"
@@ -84,7 +88,7 @@ jobs:
         run: |
           python3 << 'PYEOF'
           import json, os, sys, urllib.request, urllib.error
-          with open('/tmp/digest.json') as f:
+          with open('digest.json') as f:
               digest = json.load(f)
           emails = digest.get('emails', [])
           if not emails:
@@ -105,8 +109,8 @@ jobs:
               headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
           try:
               with urllib.request.urlopen(req, timeout=30) as r:
-                  print(f"Graph sendMail OK: HTTP {r.status} — enviado a {len(emails)} destinatarios")
+                  print(f"Graph sendMail OK: HTTP {r.status} — enviado a {len(emails)} destinatarios: {emails}")
           except urllib.error.HTTPError as e:
-              print(f"::error::Graph sendMail HTTP {e.code}: {e.read().decode('utf-8')[:500]}")
+              print(f"::error::Graph sendMail HTTP {e.code}: {e.read().decode('utf-8')[:1000]}")
               sys.exit(1)
           PYEOF
