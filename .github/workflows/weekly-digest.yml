@@ -1,0 +1,45 @@
+name: Weekly Digest (Lunes 08:00 Madrid)
+
+on:
+  schedule:
+    # Dos schedules para cubrir DST: solo dispara el que coincide con 08:00 Madrid
+    - cron: '0 6 * * 1'   # 06:00 UTC = 08:00 Madrid en VERANO (CEST, UTC+2)
+    - cron: '0 7 * * 1'   # 07:00 UTC = 08:00 Madrid en INVIERNO (CET, UTC+1)
+  workflow_dispatch:       # permite ejecutar manualmente desde la UI de GitHub
+
+jobs:
+  fire-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Madrid hour
+        id: tz
+        run: |
+          MADRID_HOUR=$(TZ=Europe/Madrid date +%H)
+          MADRID_DOW=$(TZ=Europe/Madrid date +%u)  # 1=Mon
+          echo "Madrid time: $(TZ=Europe/Madrid date)"
+          # Solo disparamos si es lunes 08:xx Madrid, O si es workflow_dispatch (manual)
+          if [ "$MADRID_HOUR" = "08" ] && [ "$MADRID_DOW" = "1" ]; then
+            echo "go=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "go=true" >> $GITHUB_OUTPUT
+          else
+            echo "go=false" >> $GITHUB_OUTPUT
+            echo "Skip: hora=$MADRID_HOUR dow=$MADRID_DOW (no coincide con lunes 08:00 Madrid)"
+          fi
+
+      - name: Trigger weekly digest
+        if: steps.tz.outputs.go == 'true'
+        run: |
+          echo "Disparando POST /api/weekly-digest"
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            "https://expansion.sficonsulting.es/api/weekly-digest" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          BODY=$(echo "$RESPONSE" | sed -e 's/HTTP_STATUS:.*//')
+          STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Weekly digest devolvió HTTP $STATUS"
+            exit 1
+          fi
