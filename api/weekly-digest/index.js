@@ -1,6 +1,5 @@
 // Azure Function: weekly-digest (HTTP)
 // Genera el resumen semanal de pipeline y lo envía al Grupo 5 - Resumen Semanal
-// Asume WEBSITE_TIME_ZONE=Romance Standard Time configurado en la SWA
 // App Settings necesarios:
 //   - SUPABASE_URL
 //   - SUPABASE_ANON_KEY
@@ -30,8 +29,11 @@ function httpsRequest(opts, body) {
     });
 }
 
-async function sbGet(path) {
-    var u = new URL(process.env.SUPABASE_URL + '/rest/v1/' + path);
+async function sbGet(path, context) {
+    var base = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+    var fullUrl = base + '/rest/v1/' + path;
+    var u = new URL(fullUrl);
+    if (context && context.log) context.log('sbGet ' + u.pathname + u.search);
     var res = await httpsRequest({
         hostname: u.hostname,
         path: u.pathname + u.search,
@@ -42,15 +44,19 @@ async function sbGet(path) {
             'Accept': 'application/json'
         }
     });
-    if (res.status >= 400) throw new Error('Supabase ' + res.status + ': ' + res.body);
+    if (res.status >= 400) {
+        var err = new Error('Supabase ' + res.status + ' on ' + path + ': ' + res.body);
+        err.status = res.status;
+        err.path = path;
+        err.responseBody = res.body;
+        throw err;
+    }
     try { return JSON.parse(res.body); } catch (e) { return []; }
 }
 
-// Calcula la ventana de la semana anterior (lunes 00:00 → domingo 23:59:59.999) en Madrid
 function getLastWeekWindow() {
-    // Con WEBSITE_TIME_ZONE=Romance Standard Time, new Date() devuelve hora Madrid
     var now = new Date();
-    var dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+    var dayOfWeek = now.getDay();
     var daysToThisMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     var thisMonday00 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     thisMonday00.setDate(thisMonday00.getDate() - daysToThisMonday);
@@ -124,7 +130,6 @@ function fichaUrl(sueloId) {
     return base + '/?suelo=' + encodeURIComponent(sueloId);
 }
 
-// Construye el HTML del email
 function buildDigestHTML(data) {
     var rango = fmtRangoES(data.from, data.to);
     var totalNuevas = data.nuevas.length;
@@ -134,15 +139,12 @@ function buildDigestHTML(data) {
     var hhnnTotal = data.nuevas.reduce(function (s, x) { var h = calcHHNNEstimado(x); return s + (h || 0); }, 0);
 
     var html = '<div style="font-family:Calibri,Arial,sans-serif;max-width:720px;margin:0 auto;background:#fff;color:#1e293b;">';
-
-    // Cabecera
     html += '<div style="background:' + NAVY + ';padding:24px 28px;">';
     html += '<div style="color:' + GOLD + ';font-size:12px;letter-spacing:2px;font-weight:700;">SFI · EXPANSIÓN</div>';
     html += '<h1 style="color:#fff;font-size:22px;margin:6px 0 0;font-weight:600;">Resumen Semanal</h1>';
     html += '<div style="color:#fff;opacity:0.75;font-size:13px;margin-top:4px;">' + rango + '</div>';
     html += '</div>';
 
-    // KPIs
     html += '<div style="padding:20px 24px 0;">';
     html += '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-spacing:8px;">';
     html += '<tr>';
@@ -160,7 +162,6 @@ function buildDigestHTML(data) {
     });
     html += '</tr></table></div>';
 
-    // BLOQUE 2: Nuevas oportunidades agrupadas por vertical
     html += '<div style="padding:24px;">';
     html += '<h2 style="color:' + NAVY + ';font-size:16px;border-bottom:2px solid ' + GOLD + ';padding-bottom:6px;margin:0 0 12px;">Nuevas oportunidades captadas</h2>';
     if (totalNuevas === 0) {
@@ -199,7 +200,6 @@ function buildDigestHTML(data) {
     }
     html += '</div>';
 
-    // BLOQUE 3a: Pasaron a Fase 1
     html += '<div style="padding:0 24px 24px;">';
     html += '<h2 style="color:' + NAVY + ';font-size:16px;border-bottom:2px solid ' + GOLD + ';padding-bottom:6px;margin:0 0 12px;">Pasaron a Fase 1 — Compra del suelo</h2>';
     if (totalFase1 === 0) {
@@ -225,7 +225,6 @@ function buildDigestHTML(data) {
     }
     html += '</div>';
 
-    // BLOQUE 3b: Pasaron a Seguimiento
     html += '<div style="padding:0 24px 24px;">';
     html += '<h2 style="color:' + NAVY + ';font-size:16px;border-bottom:2px solid ' + GOLD + ';padding-bottom:6px;margin:0 0 12px;">Pasaron a Seguimiento</h2>';
     if (totalSeguim === 0) {
@@ -238,7 +237,7 @@ function buildDigestHTML(data) {
         });
         html += '</tr></thead><tbody>';
         data.movSeguim.forEach(function (m) {
-            var motivo = m.descripcion || (m.cambios && m.cambios[0] && m.cambios[0].nota) || '—';
+            var motivo = m.descripcion || '—';
             html += '<tr style="border-bottom:1px solid #f1f5f9;">';
             html += '<td style="padding:8px;"><a href="' + fichaUrl(m.suelo.id) + '" style="color:' + NAVY + ';font-weight:600;text-decoration:none;">' + escapeHTML(m.suelo.nombre || '—') + '</a></td>';
             html += '<td style="padding:8px;color:#475569;">' + escapeHTML(m.suelo.ciudad || '—') + '</td>';
@@ -251,7 +250,6 @@ function buildDigestHTML(data) {
     }
     html += '</div>';
 
-    // Footer
     var base = process.env.PLATFORM_BASE_URL || 'https://expansion.sficonsulting.es';
     html += '<div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 24px;text-align:center;font-size:11px;color:#94a3b8;">';
     html += '<a href="' + base + '" style="color:' + GOLD + ';font-weight:600;text-decoration:none;">Ver pipeline completo →</a>';
@@ -262,22 +260,18 @@ function buildDigestHTML(data) {
     return html;
 }
 
-async function runDigest(context) {
+async function gatherData(context) {
     var win = getLastWeekWindow();
     var fromISO = win.from.toISOString();
     var toExclusiveISO = win.toExclusive.toISOString();
     var fromYMD = ymd(win.from);
     var toYMD = ymd(win.to);
 
-    context.log('Digest window: ' + fromYMD + ' → ' + toYMD);
+    if (context && context.log) context.log('Ventana: ' + fromYMD + ' → ' + toYMD);
 
-    // 1) Suelos nuevos por fecha_captacion
-    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,pvp_zona_manual,score_total,responsable,hhnn_estimados,pct_hhnn,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD);
+    var nuevas = await sbGet('suelos?select=id,nombre,ciudad,provincia,negocio,vertical,num_viviendas,precio_suelo,superficie_edificable,pvp_zona_manual,score_total,responsable,hhnn_estimados,pct_hhnn,pipeline_estado,fecha_captacion&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD, context);
+    var actividades = await sbGet('actividades?select=*&tipo=eq.cambio_fase&fecha=gte.' + fromISO + '&fecha=lt.' + toExclusiveISO, context);
 
-    // 2) Actividades cambio_fase en la ventana
-    var actividades = await sbGet('actividades?select=*&tipo=eq.cambio_fase&fecha=gte.' + fromISO + '&fecha=lt.' + toExclusiveISO);
-
-    // Filtrar las que tienen cambio a Fase 1 o Seguimiento
     var movFase1 = [];
     var movSeguim = [];
     var sueloIds = {};
@@ -287,7 +281,7 @@ async function runDigest(context) {
         var faseChange = cambios.find && cambios.find(function (c) { return c.campo === 'pipeline_estado'; });
         if (!faseChange) return;
         var nuevo = faseChange.nuevo || '';
-        if (nuevo.indexOf('Fase 1') === 0 || nuevo === 'Fase 1: Compra del suelo') {
+        if (nuevo.indexOf('Fase 1') === 0) {
             sueloIds[a.suelo_id] = true;
             movFase1.push({ act: a, sueloId: a.suelo_id, anterior: faseChange.anterior, nuevo: faseChange.nuevo, usuario: a.usuario, descripcion: a.descripcion });
         } else if (nuevo === 'Seguimiento') {
@@ -296,20 +290,17 @@ async function runDigest(context) {
         }
     });
 
-    // Cargar suelos referenciados por los cambios de fase (si no están ya en nuevas)
     var ids = Object.keys(sueloIds);
     var sueloMap = {};
     nuevas.forEach(function (s) { sueloMap[s.id] = s; });
     if (ids.length) {
-        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,hhnn_estimados,pct_hhnn,pvp_zona_manual,superficie_edificable&id=in.(' + ids.map(function (i) { return '"' + i + '"'; }).join(',') + ')';
-        var sueloRows = await sbGet(query);
+        var query = 'suelos?select=id,nombre,ciudad,negocio,responsable,fecha_captacion,hhnn_estimados,pct_hhnn,pvp_zona_manual,superficie_edificable&id=in.(' + ids.join(',') + ')';
+        var sueloRows = await sbGet(query, context);
         sueloRows.forEach(function (s) { sueloMap[s.id] = s; });
     }
 
-    // Enriquecer movimientos con datos del suelo y días
     movFase1.forEach(function (m) {
         m.suelo = sueloMap[m.sueloId] || { id: m.sueloId, nombre: '(suelo no encontrado)' };
-        // Días en Fase 0: requiere fechas_fase, fallback a fecha_captacion
         m.diasFase0 = diasEntre(m.suelo.fecha_captacion, m.act.fecha);
     });
     movSeguim.forEach(function (m) {
@@ -317,27 +308,30 @@ async function runDigest(context) {
         m.diasDesdeCapt = diasEntre(m.suelo.fecha_captacion, m.act.fecha);
     });
 
-    var data = { from: win.from, to: win.to, nuevas: nuevas, movFase1: movFase1, movSeguim: movSeguim };
-    var html = buildDigestHTML(data);
+    return { win: win, nuevas: nuevas, movFase1: movFase1, movSeguim: movSeguim };
+}
 
-    // 3) Leer destinatarios del Grupo 5
+async function runDigest(context) {
+    var data = await gatherData(context);
+    var html = buildDigestHTML({ from: data.win.from, to: data.win.to, nuevas: data.nuevas, movFase1: data.movFase1, movSeguim: data.movSeguim });
+
     var emails = [];
     var groupName = 'Grupo 5 - Resumen Semanal';
     try {
-        var cfg = await sbGet('configuracion?clave=eq.emailGroups&select=valor');
+        var cfg = await sbGet('configuracion?clave=eq.emailGroups&select=valor', context);
         if (cfg && cfg[0] && cfg[0].valor && cfg[0].valor.grupo5) {
             emails = cfg[0].valor.grupo5.emails || [];
             groupName = cfg[0].valor.grupo5.nombre || groupName;
         }
-    } catch (e) { context.log.warn('No se pudo leer emailGroups:', e.message); }
+    } catch (e) { if (context && context.log) context.log.warn('No se pudo leer emailGroups:', e.message); }
 
+    var counts = { nuevas: data.nuevas.length, movFase1: data.movFase1.length, movSeguim: data.movSeguim.length };
     if (!emails.length) {
-        context.log.warn('Grupo 5 sin emails — no se envía nada');
-        return { ok: false, reason: 'grupo5 sin emails', html: html, counts: { nuevas: nuevas.length, movFase1: movFase1.length, movSeguim: movSeguim.length } };
+        if (context && context.log) context.log.warn('Grupo 5 sin emails — no se envía nada');
+        return { ok: false, reason: 'grupo5 sin emails', counts: counts };
     }
 
-    // 4) Enviar
-    var subject = '[SFI Expansión] ' + fmtRangoES(win.from, win.to) + ' — ' + nuevas.length + ' nuevas, ' + movFase1.length + ' a Fase 1';
+    var subject = '[SFI Expansión] ' + fmtRangoES(data.win.from, data.win.to) + ' — ' + counts.nuevas + ' nuevas, ' + counts.movFase1 + ' a Fase 1';
     var sendPayload = JSON.stringify({ to: emails, subject: subject, html: html });
     var sendUrl = process.env.PLATFORM_BASE_URL || 'https://lively-plant-019445f1e.2.azurestaticapps.net';
     var sendHost = new URL(sendUrl).hostname;
@@ -349,11 +343,11 @@ async function runDigest(context) {
     }, sendPayload);
 
     if (sendRes.status >= 200 && sendRes.status < 300) {
-        context.log('Resumen enviado a ' + emails.length + ' destinatarios');
-        return { ok: true, sent_to: emails, group: groupName, counts: { nuevas: nuevas.length, movFase1: movFase1.length, movSeguim: movSeguim.length } };
+        if (context && context.log) context.log('Resumen enviado a ' + emails.length + ' destinatarios');
+        return { ok: true, sent_to: emails, group: groupName, counts: counts };
     } else {
-        context.log.error('send-email error ' + sendRes.status + ': ' + sendRes.body);
-        return { ok: false, reason: 'send-email error', status: sendRes.status, detail: sendRes.body, counts: { nuevas: nuevas.length, movFase1: movFase1.length, movSeguim: movSeguim.length } };
+        if (context && context.log) context.log.error('send-email error ' + sendRes.status + ': ' + sendRes.body);
+        return { ok: false, reason: 'send-email error', status: sendRes.status, detail: sendRes.body, counts: counts };
     }
 }
 
@@ -370,40 +364,21 @@ module.exports = async function (context, req) {
     var preview = req && req.query && req.query.preview === '1';
     try {
         if (preview) {
-            // Preview: genera HTML pero NO envía
-            var win = getLastWeekWindow();
-            var fromISO = win.from.toISOString();
-            var toExclusiveISO = win.toExclusive.toISOString();
-            var fromYMD = ymd(win.from);
-            var toYMD = ymd(win.to);
-            var nuevas = await sbGet('suelos?select=*&fecha_captacion=gte.' + fromYMD + '&fecha_captacion=lte.' + toYMD);
-            var actividades = await sbGet('actividades?select=*&tipo=eq.cambio_fase&fecha=gte.' + fromISO + '&fecha=lt.' + toExclusiveISO);
-            var movFase1 = [], movSeguim = [], sueloIds = {}, sueloMap = {};
-            nuevas.forEach(function (s) { sueloMap[s.id] = s; });
-            actividades.forEach(function (a) {
-                var cambios = a.cambios || [];
-                if (typeof cambios === 'string') { try { cambios = JSON.parse(cambios); } catch (e) { cambios = []; } }
-                var fc = cambios.find && cambios.find(function (c) { return c.campo === 'pipeline_estado'; });
-                if (!fc) return;
-                var nuevo = fc.nuevo || '';
-                if (nuevo.indexOf('Fase 1') === 0) { sueloIds[a.suelo_id] = true; movFase1.push({ act: a, sueloId: a.suelo_id, usuario: a.usuario }); }
-                else if (nuevo === 'Seguimiento') { sueloIds[a.suelo_id] = true; movSeguim.push({ act: a, sueloId: a.suelo_id, usuario: a.usuario }); }
-            });
-            var ids = Object.keys(sueloIds);
-            if (ids.length) {
-                var q = 'suelos?select=*&id=in.(' + ids.map(function (i) { return '"' + i + '"'; }).join(',') + ')';
-                (await sbGet(q)).forEach(function (s) { sueloMap[s.id] = s; });
-            }
-            movFase1.forEach(function (m) { m.suelo = sueloMap[m.sueloId] || { id: m.sueloId, nombre: '(?)' }; m.diasFase0 = diasEntre(m.suelo.fecha_captacion, m.act.fecha); });
-            movSeguim.forEach(function (m) { m.suelo = sueloMap[m.sueloId] || { id: m.sueloId, nombre: '(?)' }; m.diasDesdeCapt = diasEntre(m.suelo.fecha_captacion, m.act.fecha); });
-            var html = buildDigestHTML({ from: win.from, to: win.to, nuevas: nuevas, movFase1: movFase1, movSeguim: movSeguim });
+            var data = await gatherData(context);
+            var html = buildDigestHTML({ from: data.win.from, to: data.win.to, nuevas: data.nuevas, movFase1: data.movFase1, movSeguim: data.movSeguim });
             context.res = { status: 200, headers: Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, CORS), body: html };
             return;
         }
         var result = await runDigest(context);
-        context.res = { status: result.ok ? 200 : 500, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify(result) };
+        var statusCode;
+        if (result.ok) statusCode = 200;
+        else if (result.reason === 'grupo5 sin emails') statusCode = 200;
+        else statusCode = 500;
+        context.res = { status: statusCode, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify(result) };
     } catch (e) {
         context.log.error('weekly-digest error:', e.message, e.stack);
-        context.res = { status: 500, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify({ error: e.message }) };
+        context.res = { status: 500, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS),
+            body: JSON.stringify({ error: e.message, path: e.path, supabase_status: e.status, supabase_body: e.responseBody }) };
     }
 };
+
