@@ -4,7 +4,7 @@ const url = require('url');
 // Proxy para Clientify API — evita CORS al llamar desde el frontend
 // Azure SWA stripea el header Authorization, así que la key va aquí
 const CLIENTIFY_TARGET = 'https://api.clientify.net/v1/';
-const CLIENTIFY_API_KEY = process.env.CLIENTIFY_API_KEY || 'd8ba53f111260a3668a588266ce1aa355df315c9';
+const CLIENTIFY_API_KEY = process.env.CLIENTIFY_API_KEY || '3eb9d447c5cb83381b6fda334ff8ef97b6e0cf34';
 
 module.exports = async function (context, req) {
     // CORS preflight
