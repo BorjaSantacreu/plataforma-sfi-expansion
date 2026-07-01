@@ -29,8 +29,7 @@ jobs:
       - name: Ingesta PLACSP + Agregadas
         working-directory: ingest
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          AZURE_PG_CONN: ${{ secrets.AZURE_PG_CONN }}
           LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '35' }}
         run: python ingest.py
 
@@ -48,8 +47,7 @@ jobs:
       - name: Ingesta BOE
         working-directory: ingest
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          AZURE_PG_CONN: ${{ secrets.AZURE_PG_CONN }}
           BOE_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '35' }}
         run: python boe_ingest.py
 
@@ -63,12 +61,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Instalar dependencias
-        run: pip install requests
+        run: pip install requests psycopg2-binary
       - name: Enviar resumen email
         working-directory: ingest
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          AZURE_PG_CONN: ${{ secrets.AZURE_PG_CONN }}
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
