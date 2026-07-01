@@ -1,11 +1,9 @@
 """
 EEMM · Monitor VPP — Notificación semanal por email via Microsoft Graph API.
-
-Consulta Supabase por licitaciones nuevas (últimos 7 días) y urgentes (plazo ≤7 días),
+Consulta Azure PostgreSQL por licitaciones nuevas (últimos 7 días) y urgentes (plazo ≤7 días),
 genera un email HTML con resumen y lo envía via Microsoft Graph (Azure AD App Registration).
-
 Variables de entorno:
-  SUPABASE_URL, SUPABASE_SERVICE_KEY
+  AZURE_PG_CONN    postgresql://usuario:pass@host:5432/postgres?sslmode=require
   MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
   NOTIFY_EMAIL     (default: bsantacreu@sficonsulting.es)
   NOTIFY_FROM      (default: bsantacreu@sficonsulting.es)
@@ -14,18 +12,26 @@ import os
 import sys
 import datetime as dt
 import requests
+import psycopg2
+import psycopg2.extras
+import psycopg2.extensions as _ext
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+# Igualar tipos a como los devolvía Supabase (JSON): fechas como texto, numéricos como float
+_ext.register_type(_ext.new_type((1082, 1114, 1184), "D2S", lambda v, c: v))
+_ext.register_type(_ext.new_type(_ext.DECIMAL.values, "N2F", lambda v, c: float(v) if v is not None else None))
+
+PG_CONN = os.environ.get("AZURE_PG_CONN", "")
 MS_TENANT_ID = os.environ.get("MS_TENANT_ID", "")
 MS_CLIENT_ID = os.environ.get("MS_CLIENT_ID", "")
 MS_CLIENT_SECRET = os.environ.get("MS_CLIENT_SECRET", "")
 NOTIFY_EMAIL = os.environ.get("NOTIFY_EMAIL", "bsantacreu@sficonsulting.es")
 NOTIFY_FROM = os.environ.get("NOTIFY_FROM", "bsantacreu@sficonsulting.es")
-
 ESTADOS_CERRADOS = ["Adjudicada", "Resuelta", "Desierta", "Anulada", "Parcialmente adjudicada"]
+PLATFORM_URL = "https://expansion.sficonsulting.es/"
 
-PLATFORM_URL = "https://lively-plant-019445f1e.2.azurestaticapps.net/"
+
+def _pg():
+    return psycopg2.connect(PG_CONN)
 
 
 def get_ms_token():
@@ -47,14 +53,13 @@ def get_ms_token():
 
 
 def fetch_licitaciones():
-    cols = "id,expediente,fuente,url,objeto,organo,tipo_vpp,naturaleza,num_viviendas,score,municipio,provincia,ccaa,estado,fecha_publicacion,fecha_limite,importe_base,valor_estimado,estado_interno,responsable_vpp,prioridad"
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/vpp_licitaciones?select={cols}&order=score.desc&limit=5000",
-        headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-        timeout=30,
-    )
-    r.raise_for_status()
-    return r.json()
+    conn = _pg()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM vpp_licitaciones ORDER BY score DESC NULLS LAST LIMIT 5000")
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
 
 
 def fmt_eur(n):
@@ -87,11 +92,9 @@ def estado_real(r):
 def build_email(all_rows):
     hoy = dt.date.today()
     hace7d = (hoy - dt.timedelta(days=7)).isoformat()
-
     activas = [r for r in all_rows if estado_real(r) not in ESTADOS_CERRADOS + ["Vencida"] and r.get("estado_interno") != "Descartada SFI"]
     nuevas = [r for r in activas if r.get("fecha_publicacion") and r["fecha_publicacion"] >= hace7d]
-    nuevas.sort(key=lambda r: r.get("score", 0), reverse=True)
-
+    nuevas.sort(key=lambda r: r.get("score", 0) or 0, reverse=True)
     urgentes = []
     for r in activas:
         d = dias_restantes(r.get("fecha_limite"))
@@ -99,13 +102,10 @@ def build_email(all_rows):
             r["_dias"] = d
             urgentes.append(r)
     urgentes.sort(key=lambda r: r["_dias"])
-
-    top = sorted(activas, key=lambda r: r.get("score", 0), reverse=True)[:5]
+    top = sorted(activas, key=lambda r: r.get("score", 0) or 0, reverse=True)[:5]
     en_seguimiento = [r for r in all_rows if r.get("estado_interno") == "En seguimiento"]
-
     if not nuevas and not urgentes:
         return None
-
     gold = "#C9A84C"
     navy = "#0E2841"
 
@@ -120,12 +120,12 @@ def build_email(all_rows):
         <tr style="border-bottom:1px solid #e2e8f0;">
             <td style="padding:8px 10px;font-size:13px;max-width:300px;">
                 <strong>{(r.get('objeto') or '—')[:80]}</strong>
-                <div style="color:#6B7D96;font-size:11px;">{r.get('organo', '')[:60]}</div>
+                <div style="color:#6B7D96;font-size:11px;">{(r.get('organo') or '')[:60]}</div>
             </td>
             <td style="padding:8px 10px;font-size:12px;">{ubicacion or '—'}</td>
             <td style="padding:8px 10px;font-size:12px;text-align:center;">{r.get('num_viviendas') or '—'}</td>
             <td style="padding:8px 10px;font-size:12px;text-align:right;font-weight:600;">{fmt_eur(importe)}{dias_txt}</td>
-            <td style="padding:8px 10px;font-size:12px;text-align:center;font-weight:700;color:{gold};">{r.get('score', 0)}</td>
+            <td style="padding:8px 10px;font-size:12px;text-align:center;font-weight:700;color:{gold};">{r.get('score', 0) or 0}</td>
         </tr>"""
 
     def section_header(title, count, color):
@@ -162,28 +162,24 @@ def build_email(all_rows):
                 </div>
             </div>
     """
-
     if urgentes:
         html += section_header("⏰ Vencen esta semana", len(urgentes), "#DC2626")
         html += table_start()
         for r in urgentes[:10]:
             html += row_html(r, show_dias=True)
         html += "</tbody></table>"
-
     if nuevas:
         html += section_header("🆕 Nuevas esta semana", len(nuevas), "#16A34A")
         html += table_start()
         for r in nuevas[:10]:
             html += row_html(r)
         html += "</tbody></table>"
-
     if top:
         html += section_header("🏆 Top oportunidades activas", len(top), gold)
         html += table_start()
         for r in top:
             html += row_html(r)
         html += "</tbody></table>"
-
     html += f"""
             <div style="margin-top:24px;text-align:center;">
                 <a href="{PLATFORM_URL}" style="display:inline-block;background:{gold};color:{navy};font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;">
@@ -201,11 +197,9 @@ def build_email(all_rows):
 
 def send_email(token, html, nuevas_count, urgentes_count):
     """Envía via Microsoft Graph API."""
-    hoy = dt.date.today().strftime("%d/%m/%Y")
     subject = f"🏗️ VPP Semanal: {nuevas_count} nuevas"
     if urgentes_count:
         subject += f", {urgentes_count} urgentes"
-
     r = requests.post(
         f"https://graph.microsoft.com/v1.0/users/{NOTIFY_FROM}/sendMail",
         headers={
@@ -229,25 +223,21 @@ def send_email(token, html, nuevas_count, urgentes_count):
 
 
 def main():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        sys.exit("Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY")
+    if not PG_CONN:
+        sys.exit("Falta AZURE_PG_CONN")
     if not MS_TENANT_ID or not MS_CLIENT_ID or not MS_CLIENT_SECRET:
         print("[warn] MS_TENANT_ID/MS_CLIENT_ID/MS_CLIENT_SECRET no configurados — generando HTML pero no enviando", file=sys.stderr)
-
     all_rows = fetch_licitaciones()
     print(f"Cargadas {len(all_rows)} licitaciones")
-
     html = build_email(all_rows)
     if not html:
         print("Sin novedades esta semana — no se envía email")
         return
-
     hoy = dt.date.today()
     hace7d = (hoy - dt.timedelta(days=7)).isoformat()
     activas = [r for r in all_rows if estado_real(r) not in ESTADOS_CERRADOS + ["Vencida"]]
     nuevas = len([r for r in activas if r.get("fecha_publicacion") and r["fecha_publicacion"] >= hace7d])
     urgentes = len([r for r in activas if dias_restantes(r.get("fecha_limite")) is not None and 0 <= dias_restantes(r.get("fecha_limite")) <= 7])
-
     if MS_TENANT_ID and MS_CLIENT_ID and MS_CLIENT_SECRET:
         token = get_ms_token()
         send_email(token, html, nuevas, urgentes)

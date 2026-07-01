@@ -1,21 +1,17 @@
 """
 EEMM · Monitor de Licitaciones VPP — Ingesta desde datos abiertos PLACSP.
-
 Flujo:
   1. Descarga el/los ZIP de sindicación (datos abiertos oficiales, formato CODICE 2.07 / ATOM).
   2. Parsea las entradas (parsing por local-name → robusto frente a prefijos de namespace).
   3. Filtra candidatos VPP por CPV + palabras clave (classify.es_candidato).
   4. Clasifica por reglas (tipo VPP, nº viviendas, score).
-  5. Upsert idempotente en Supabase (clave: expediente + fuente).
-
-No usa IA. Pensado para correr a diario (GitHub Actions cron o Azure Function timer).
-
+  5. Upsert idempotente en Azure PostgreSQL (clave: expediente + fuente).
+No usa IA. Pensado para correr a diario (GitHub Actions cron).
 Variables de entorno requeridas:
-  SUPABASE_URL          https://xxxx.supabase.co
-  SUPABASE_SERVICE_KEY  service_role key (SOLO server-side; nunca en el frontend)
+  AZURE_PG_CONN   postgresql://usuario:pass@host:5432/postgres?sslmode=require
 Opcionales:
-  LOOKBACK_DAYS         (def. 35) solo procesa entradas actualizadas en este margen
-  PLACSP_ZIP_URLS       lista separada por comas; si se omite, usa DEFAULT_FEEDS
+  LOOKBACK_DAYS   (def. 35) solo procesa entradas actualizadas en este margen
+  PLACSP_ZIP_URLS lista separada por comas; si se omite, usa DEFAULT_FEEDS
 """
 import os
 import io
@@ -26,16 +22,28 @@ import datetime as dt
 
 import requests
 from lxml import etree
+import psycopg2
+import psycopg2.extras
 
 from classify import es_candidato, clasificar
 
 # ---------------------------------------------------------------------------
-# CONFIG
+# CONFIG — Azure PostgreSQL (migración: antes Supabase REST)
 # ---------------------------------------------------------------------------
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+PG_CONN = os.environ.get("AZURE_PG_CONN", "")
 LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "35"))
 YEAR = dt.date.today().year
+
+
+def _pg():
+    return psycopg2.connect(PG_CONN)
+
+
+def _adapt(v):
+    # jsonb: envolver dict/list (p.ej. cpv) para psycopg2
+    if isinstance(v, (dict, list)):
+        return psycopg2.extras.Json(v)
+    return v
 
 # Feeds oficiales de datos abiertos. El nº de sindicación y el nombre de fichero
 # pueden cambiar de un año a otro — VALIDAR contra una muestra real en el 1er run.
@@ -49,7 +57,6 @@ DEFAULT_FEEDS = [
      f"https://contrataciondelsectorpublico.gob.es/sindicacion/sindicacion_1044/"
      f"PlataformasAgregadasSinMenores_{YEAR}.zip"),
 ]
-
 # Códigos CODICE de tipo de contrato (parcial — completar con la code-list oficial)
 CONTRATO_TIPO = {
     "1": "Obras", "2": "Suministros", "3": "Servicios",
@@ -57,7 +64,6 @@ CONTRATO_TIPO = {
     "31": "Patrimonial", "32": "Privado", "40": "Concesión de obras",
     "50": "Concesión de servicios",
 }
-
 # Estados CODICE (parcial — completar con la code-list oficial)
 ESTADO = {
     "PRE": "Anuncio previo", "PUB": "En plazo", "EV": "En evaluación",
@@ -66,7 +72,6 @@ ESTADO = {
     "3": "Pendiente adjudicación", "4": "Adjudicada", "5": "Resuelta",
     "6": "Anulada", "7": "Parcialmente adjudicada", "8": "Desierta",
 }
-
 # NUTS2 → CCAA (best-effort para el filtro/visión nacional)
 NUTS2_CCAA = {
     "ES11": "Galicia", "ES12": "Asturias", "ES13": "Cantabria",
@@ -76,7 +81,6 @@ NUTS2_CCAA = {
     "ES52": "C. Valenciana", "ES53": "Baleares", "ES61": "Andalucía",
     "ES62": "Murcia", "ES63": "Ceuta", "ES64": "Melilla", "ES70": "Canarias",
 }
-
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 
 
@@ -132,26 +136,21 @@ def parse_entry(entry, fuente):
     cfs = first_elem(entry, "ContractFolderStatus")
     if cfs is None:
         return None
-
     expediente = first_text(cfs, "ContractFolderID")
     if not expediente:
         return None
-
     # URL al detalle (link alternate del entry)
     url = None
     for link in entry.findall(f"{ATOM_NS}link"):
         if link.get("rel") in (None, "alternate"):
             url = link.get("href")
             break
-
     estado_cod = first_text(cfs, "ContractFolderStatusCode")
-
     # Proyecto / objeto / importes / CPV
     proj = first_elem(cfs, "ProcurementProject")
     objeto = first_text(proj, "Name") if proj is not None else None
     tipo_cod = first_text(proj, "TypeCode") if proj is not None else None
     tipo_contrato = CONTRATO_TIPO.get(tipo_cod, tipo_cod)
-
     importe_base = valor_estimado = None
     if proj is not None:
         budget = first_elem(proj, "BudgetAmount")
@@ -159,9 +158,7 @@ def parse_entry(entry, fuente):
             importe_base = to_num(first_text(budget, "TaxExclusiveAmount")) \
                 or to_num(first_text(budget, "TotalAmount"))
             valor_estimado = to_num(first_text(budget, "EstimatedOverallContractAmount"))
-
     cpvs = all_text(proj, "ItemClassificationCode") if proj is not None else []
-
     # Localización
     municipio = provincia = nuts = ccaa = None
     if proj is not None:
@@ -172,7 +169,6 @@ def parse_entry(entry, fuente):
             nuts = first_text(loc, "CountrySubentityCode")
             if nuts:
                 ccaa = NUTS2_CCAA.get(nuts[:4])
-
     # Órgano de contratación (dentro de LocatedContractingParty)
     organo = None
     lcp = first_elem(cfs, "LocatedContractingParty")
@@ -180,7 +176,6 @@ def parse_entry(entry, fuente):
         pn = first_elem(lcp, "PartyName")
         if pn is not None:
             organo = first_text(pn, "Name")
-
     # Plazo de presentación
     fecha_limite = None
     tp = first_elem(cfs, "TenderingProcess")
@@ -188,7 +183,6 @@ def parse_entry(entry, fuente):
         ddl = first_elem(tp, "TenderSubmissionDeadlinePeriod")
         if ddl is not None:
             fecha_limite = to_date(first_text(ddl, "EndDate"))
-
     # Resultado / adjudicación
     fecha_adj = adjudicatario = importe_adj = None
     tr = first_elem(cfs, "TenderResult")
@@ -203,10 +197,8 @@ def parse_entry(entry, fuente):
         if atp is not None:
             importe_adj = to_num(first_text(atp, "PayableAmount")) \
                 or to_num(first_text(atp, "TaxExclusiveAmount"))
-
     # Fecha de publicación: usamos el <updated> del entry como aproximación
     fecha_pub = to_date(first_text(entry, "updated"))
-
     return {
         "expediente": expediente,
         "fuente": fuente,
@@ -258,65 +250,63 @@ def reciente(rec, cutoff):
 
 
 # ---------------------------------------------------------------------------
-# Supabase upsert (PostgREST, merge-duplicates por (expediente, fuente))
+# Escritura en Azure PostgreSQL (merge-duplicates por (expediente, fuente))
 # ---------------------------------------------------------------------------
 def upsert(rows):
     if not rows:
         return 0
-    endpoint = f"{SUPABASE_URL}/rest/v1/vpp_licitaciones?on_conflict=expediente,fuente"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates,return=minimal",
-    }
+    cols = []
+    for r in rows:
+        for k in r.keys():
+            if k not in cols:
+                cols.append(k)
+    collist = ",".join('"%s"' % c for c in cols)
+    ph = ",".join(["%s"] * len(cols))
+    updates = ",".join('"%s"=EXCLUDED."%s"' % (c, c) for c in cols
+                       if c not in ("expediente", "fuente"))
+    sql = ("INSERT INTO vpp_licitaciones (%s) VALUES (%s) "
+           "ON CONFLICT (expediente, fuente) DO UPDATE SET %s") % (collist, ph, updates)
     total = 0
-    for i in range(0, len(rows), 500):  # lotes de 500
-        chunk = rows[i:i + 500]
-        r = requests.post(endpoint, headers=headers, json=chunk, timeout=120)
-        if r.status_code >= 300:
-            print(f"  [error] upsert {r.status_code}: {r.text[:400]}", file=sys.stderr)
-            r.raise_for_status()
-        total += len(chunk)
+    conn = _pg()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                for i in range(0, len(rows), 500):  # lotes de 500
+                    chunk = rows[i:i + 500]
+                    data = [[_adapt(r.get(c)) for c in cols] for r in chunk]
+                    psycopg2.extras.execute_batch(cur, sql, data, page_size=500)
+                    total += len(chunk)
+    finally:
+        conn.close()
     return total
 
 
 def log_run(fuente, leidas, candidatos, upserted, error=None):
     """Deja traza de la ejecución en vpp_ingest_log (auditoría / salud del sistema)."""
     try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/vpp_ingest_log",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            },
-            json={
-                "fuente": fuente, "entries_leidas": leidas,
-                "candidatos": candidatos, "insertados": upserted,
-                "actualizados": 0, "error": (error or "")[:500] or None,
-            },
-            timeout=30,
-        )
-    except requests.RequestException as e:
+        conn = _pg()
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO vpp_ingest_log (fuente, entries_leidas, candidatos, "
+                    "insertados, actualizados, error) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (fuente, leidas, candidatos, upserted, 0, (error or "")[:500] or None))
+        conn.close()
+    except Exception as e:  # noqa: BLE001
         print(f"  [warn] no se pudo registrar el run: {e}", file=sys.stderr)
 
 
 def main():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        sys.exit("Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY")
-
+    if not PG_CONN:
+        sys.exit("Falta AZURE_PG_CONN")
     feeds = DEFAULT_FEEDS
     env_urls = os.environ.get("PLACSP_ZIP_URLS")
     if env_urls:
         feeds = [("PLACSP", u.strip()) for u in env_urls.split(",") if u.strip()]
-
     cutoff = (dt.date.today() - dt.timedelta(days=LOOKBACK_DAYS)).isoformat()
     now_iso = dt.datetime.utcnow().isoformat() + "Z"
     candidatos = []
     leidas = 0
-
     for fuente, url in feeds:
         print(f"Descargando {fuente}: {url}")
         try:
@@ -325,7 +315,6 @@ def main():
         except requests.RequestException as e:
             print(f"  [error] descarga fallida: {e}", file=sys.stderr)
             continue
-
         for entry in iter_entries(resp.content):
             leidas += 1
             rec = parse_entry(entry, fuente)
@@ -340,14 +329,12 @@ def main():
             rec["last_seen"] = now_iso
             rec["updated_at"] = now_iso
             candidatos.append(rec)
-
     # Deduplicar por (expediente, fuente) — quedarse con la versión más reciente
     seen = {}
     for rec in candidatos:
         key = (rec["expediente"], rec["fuente"])
         seen[key] = rec  # la última aparición sobreescribe
     candidatos = list(seen.values())
-
     print(f"Leídas {leidas} entradas · {len(candidatos)} candidatos VPP (dedup)")
     error = None
     n = 0

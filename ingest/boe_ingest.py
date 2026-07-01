@@ -1,15 +1,13 @@
 """
 EEMM · Monitor VPP — Ingesta BOE (enajenaciones patrimoniales, subastas, concesiones inmobiliarias).
-
 Flujo:
   1. Recorre los sumarios diarios del BOE (Sección V: Anuncios) de los últimos N días.
   2. Filtra entradas por keywords inmobiliarios en el título.
   3. Para cada candidato, descarga el XML completo y extrae datos.
   4. Clasifica y puntúa con las mismas reglas que PLACSP.
-  5. Upsert en Supabase (misma tabla vpp_licitaciones, fuente='BOE').
-
+  5. Upsert en Azure PostgreSQL (misma tabla vpp_licitaciones, fuente='BOE').
 Variables de entorno:
-  SUPABASE_URL, SUPABASE_SERVICE_KEY (mismas que PLACSP)
+  AZURE_PG_CONN      postgresql://usuario:pass@host:5432/postgres?sslmode=require
   BOE_LOOKBACK_DAYS  (def. 35)
 """
 import os
@@ -18,15 +16,25 @@ import sys
 import time
 import datetime as dt
 import requests
+import psycopg2
+import psycopg2.extras
 
 # Importar clasificador compartido
 from classify import es_candidato, clasificar
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+PG_CONN = os.environ.get("AZURE_PG_CONN", "")
 LOOKBACK_DAYS = int(os.environ.get("BOE_LOOKBACK_DAYS", os.environ.get("LOOKBACK_DAYS", "35")))
-
 BOE_API = "https://www.boe.es/datosabiertos/api"
+
+
+def _pg():
+    return psycopg2.connect(PG_CONN)
+
+
+def _adapt(v):
+    if isinstance(v, (dict, list)):
+        return psycopg2.extras.Json(v)
+    return v
 
 # Keywords para filtrar títulos de la Sección V del BOE
 KW_INMUEBLE = [
@@ -37,7 +45,6 @@ KW_INMUEBLE = [
     "aprovechamiento urbanístico", "aprovechamiento urbanistico",
     "vpo", "vpp", "protegida", "protegidas", "asequible",
 ]
-
 # Mapeamos departamento → provincia/CCAA (best-effort por nombre del organismo)
 CCAA_KEYWORDS = {
     "Andalucía": ["andaluc", "sevilla", "málaga", "malaga", "córdoba", "cordoba", "granada", "jaén", "jaen", "almería", "almeria", "huelva", "cádiz", "cadiz"],
@@ -71,11 +78,9 @@ def detect_ccaa(text):
 
 def detect_municipio(text):
     """Intenta extraer municipio del título o departamento."""
-    # Patrón: "Ayuntamiento de XXXX"
     m = re.search(r"[Aa]yuntamiento\s+de\s+([A-ZÁÉÍÓÚÑa-záéíóúñ\s\-]+?)(?:\.|,|$)", text)
     if m:
         return m.group(1).strip()
-    # Patrón: "Diputación de XXXX" o "Gobierno de XXXX"
     m = re.search(r"(?:Diputación|Gobierno|Junta)\s+(?:de|del)\s+([A-ZÁÉÍÓÚÑa-záéíóúñ\s\-]+?)(?:\.|,|$)", text)
     if m:
         return m.group(1).strip()
@@ -102,10 +107,8 @@ def detect_provincia(text):
 
 def extract_importe(text):
     """Busca importes en euros en el texto."""
-    # Patrón: 1.234.567,89 euros / € / EUR
     matches = re.findall(r"(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?)\s*(?:euros|€|EUR)", text, re.IGNORECASE)
     if matches:
-        # Tomar el mayor como importe base
         importes = []
         for m in matches:
             try:
@@ -155,11 +158,8 @@ def parse_sumario_entries(sumario_json):
             if isinstance(secciones, dict):
                 secciones = [secciones]
             for sec in secciones:
-                # Sección V = Anuncios, pero también B = Otros anuncios
                 sec_num = sec.get("num", "")
                 if sec_num not in ("5", "V", "5B", "5A", "4", "3"):
-                    # Solo secciones de anuncios y disposiciones
-                    # Ampliamos a 3 y 4 por si hay patrimoniales ahí
                     if sec_num not in ("3", "4"):
                         continue
                 departamentos = sec.get("departamento", [])
@@ -196,29 +196,24 @@ def es_inmueble(titulo, departamento):
 
 
 def entry_to_record(entry, doc_text=""):
-    """Convierte una entry del BOE en un registro para Supabase."""
+    """Convierte una entry del BOE en un registro para la BD."""
     titulo = entry["titulo"]
     depto = entry["departamento"]
     full_text = f"{titulo} {depto} {doc_text}"
-
     municipio = detect_municipio(f"{titulo} {depto}")
     provincia = detect_provincia(full_text)
     ccaa = detect_ccaa(full_text)
     importe = extract_importe(doc_text) if doc_text else extract_importe(titulo)
-
     boe_url = ""
     if entry.get("url_html"):
         boe_url = "https://www.boe.es" + entry["url_html"] if entry["url_html"].startswith("/") else entry["url_html"]
     elif entry.get("id"):
         boe_url = f"https://www.boe.es/diario_boe/txt.php?id={entry['id']}"
-
-    # Fecha publicación
     fecha_pub = None
     if entry.get("fecha"):
         m = re.search(r"(\d{4})(\d{2})(\d{2})", entry["fecha"])
         if m:
             fecha_pub = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
-
     rec = {
         "expediente": entry["id"],
         "fuente": "BOE",
@@ -234,7 +229,7 @@ def entry_to_record(entry, doc_text=""):
         "estado": "Publicado",
         "estado_codigo": None,
         "fecha_publicacion": fecha_pub,
-        "fecha_limite": None,  # BOE no siempre tiene fecha límite en el sumario
+        "fecha_limite": None,
         "fecha_adjudicacion": None,
         "importe_base": importe,
         "valor_estimado": None,
@@ -245,114 +240,101 @@ def entry_to_record(entry, doc_text=""):
     return rec
 
 
+# ---------------------------------------------------------------------------
+# Escritura en Azure PostgreSQL (merge-duplicates por (expediente, fuente))
+# ---------------------------------------------------------------------------
 def upsert(rows):
     if not rows:
         return 0
-    endpoint = f"{SUPABASE_URL}/rest/v1/vpp_licitaciones?on_conflict=expediente,fuente"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates,return=minimal",
-    }
+    cols = []
+    for r in rows:
+        for k in r.keys():
+            if k not in cols:
+                cols.append(k)
+    collist = ",".join('"%s"' % c for c in cols)
+    ph = ",".join(["%s"] * len(cols))
+    updates = ",".join('"%s"=EXCLUDED."%s"' % (c, c) for c in cols
+                       if c not in ("expediente", "fuente"))
+    sql = ("INSERT INTO vpp_licitaciones (%s) VALUES (%s) "
+           "ON CONFLICT (expediente, fuente) DO UPDATE SET %s") % (collist, ph, updates)
     total = 0
-    for i in range(0, len(rows), 500):
-        chunk = rows[i:i + 500]
-        r = requests.post(endpoint, headers=headers, json=chunk, timeout=120)
-        if r.status_code >= 300:
-            print(f"  [error] upsert {r.status_code}: {r.text[:400]}", file=sys.stderr)
-            r.raise_for_status()
-        total += len(chunk)
+    conn = _pg()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                for i in range(0, len(rows), 500):
+                    chunk = rows[i:i + 500]
+                    data = [[_adapt(r.get(c)) for c in cols] for r in chunk]
+                    psycopg2.extras.execute_batch(cur, sql, data, page_size=500)
+                    total += len(chunk)
+    finally:
+        conn.close()
     return total
 
 
 def log_run(fuente, leidas, candidatos, upserted, error=None):
     try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/vpp_ingest_log",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            },
-            json={
-                "fuente": fuente, "entries_leidas": leidas,
-                "candidatos": candidatos, "insertados": upserted,
-                "actualizados": 0, "error": (error or "")[:500] or None,
-            },
-            timeout=30,
-        )
-    except requests.RequestException as e:
+        conn = _pg()
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO vpp_ingest_log (fuente, entries_leidas, candidatos, "
+                    "insertados, actualizados, error) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (fuente, leidas, candidatos, upserted, 0, (error or "")[:500] or None))
+        conn.close()
+    except Exception as e:  # noqa: BLE001
         print(f"  [warn] no se pudo registrar el run: {e}", file=sys.stderr)
 
 
 def main():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        sys.exit("Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY")
-
+    if not PG_CONN:
+        sys.exit("Falta AZURE_PG_CONN")
     now_iso = dt.datetime.utcnow().isoformat() + "Z"
     candidatos = []
     total_entries = 0
     total_sumarios = 0
-
     print(f"BOE Ingesta: {LOOKBACK_DAYS} días hacia atrás")
-
     for days_ago in range(LOOKBACK_DAYS):
         fecha = dt.date.today() - dt.timedelta(days=days_ago)
         fecha_str = fecha.strftime("%Y%m%d")
-
         sumario = fetch_sumario(fecha_str)
         if not sumario:
             continue
         total_sumarios += 1
-
         entries = parse_sumario_entries(sumario)
         total_entries += len(entries)
-
         for entry in entries:
             if not es_inmueble(entry["titulo"], entry["departamento"]):
                 continue
-
-            # Descargar texto completo para extraer más datos
             doc_text = ""
             if entry.get("id"):
                 doc_text = fetch_documento(entry["id"])
                 time.sleep(0.2)  # Rate limit cortesía
-
             rec = entry_to_record(entry, doc_text)
-
-            # Clasificar con las mismas reglas que PLACSP
             if es_candidato(rec["objeto"], rec["organo"], rec["tipo_contrato"], rec["cpv"]):
                 clasificar(rec)
             else:
-                # Candidato BOE que no pasa el filtro estricto de PLACSP
-                # pero sí tiene keywords inmobiliarios → score base
                 rec["tipo_vpp"] = "Otro / revisar"
                 rec["naturaleza"] = "Suelo / derecho"
                 rec["es_vpp"] = False
                 rec["num_viviendas"] = None
-                rec["score"] = 25  # Score base bajo para revisión manual
-
+                rec["score"] = 25
             rec["last_seen"] = now_iso
             rec["updated_at"] = now_iso
             candidatos.append(rec)
-
     # Deduplicar
     seen = {}
     for rec in candidatos:
         key = (rec["expediente"], rec["fuente"])
         seen[key] = rec
     candidatos = list(seen.values())
-
     print(f"BOE: {total_sumarios} sumarios, {total_entries} entries, {len(candidatos)} candidatos inmobiliarios")
-
     error = None
     n = 0
     try:
         n = upsert(candidatos)
         print(f"Upsert OK: {n} registros BOE")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         error = str(e)
         print(f"[error] {error}", file=sys.stderr)
     log_run("BOE", total_entries, len(candidatos), n, error)
