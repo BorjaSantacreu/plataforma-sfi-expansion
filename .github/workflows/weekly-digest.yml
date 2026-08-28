@@ -28,9 +28,15 @@ jobs:
       - name: Fetch digest content (HTML + recipients) from Azure Function
         if: steps.tz.outputs.go == 'true'
         id: digest
+        env:
+          DIGEST_KEY: ${{ secrets.DIGEST_KEY }}
         run: |
           echo "Llamando a /api/weekly-digest?fmt=full"
+          if [ -z "$DIGEST_KEY" ]; then
+            echo "::warning::Falta el secreto DIGEST_KEY del repositorio; la función lo rechazará en cuanto se active en Azure"
+          fi
           RESP=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            -H "x-digest-key: $DIGEST_KEY" \
             "https://expansion.sficonsulting.es/api/weekly-digest?fmt=full")
           BODY=$(echo "$RESP" | sed -e 's/HTTP_STATUS:.*//')
           STATUS=$(echo "$RESP" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
